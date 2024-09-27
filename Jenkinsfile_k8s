@@ -1,0 +1,20 @@
+if (env.BRANCH_IS_PRIMARY) {
+    // Only trigger a daily check on the principal branch
+    properties([pipelineTriggers([cron('@daily')])])
+}
+
+terraform(
+  stagingCredentials: [
+    string(variable: 'AWS_ACCESS_KEY_ID', credentialsId: 'staging-terraform-aws-sponsorship-access-key'),
+    string(variable: 'AWS_SECRET_ACCESS_KEY', credentialsId:'staging-terraform-aws-sponsorship-secret-key'),
+    file(variable: 'BACKEND_CONFIG_FILE', credentialsId: 'staging-terraform-aws-sponsorship-backend-config'),
+  ],
+  productionCredentials: [
+    string(variable: 'AWS_ACCESS_KEY_ID', credentialsId: 'production-terraform-aws-sponsorship-access-key'),
+    string(variable: 'AWS_SECRET_ACCESS_KEY', credentialsId:'production-terraform-aws-sponsorship-secret-key'),
+
+    file(variable: 'BACKEND_CONFIG_FILE', credentialsId: 'production-terraform-aws-sponsorship-backend-config'),
+  ],
+  // TODO: generate a local report to be published
+  // publishReports: ['jenkins-infra-data-reports/aws-sponsorship.json'],
+)
