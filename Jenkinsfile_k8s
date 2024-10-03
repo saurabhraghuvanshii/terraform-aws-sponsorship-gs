@@ -3,7 +3,7 @@ if (env.BRANCH_IS_PRIMARY) {
     properties([pipelineTriggers([cron('@daily')])])
 }
 withEnv([
-  "TF_VAR_aws_profile=default"
+  "TF_VAR_aws_profile=infra-developer"
 ]) {
   terraform(
     stagingCredentials: [
