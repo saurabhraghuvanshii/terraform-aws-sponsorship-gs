@@ -11,7 +11,7 @@ module "vpc" {
   version = "5.13.0"
 
   name = "${local.cluster_name}-vpc"
-  cidr = "10.0.0.0/8"
+  cidr = "10.0.0.0/16"
 
 
   # dual stack https://github.com/terraform-aws-modules/terraform-aws-vpc/blob/v5.13.0/examples/ipv6-dualstack/main.tf
@@ -31,13 +31,13 @@ module "vpc" {
     # first VM ci.jenkins.io
     "10.0.0.0/24", # 10.0.0.1 -> 10.0.0.254 (254 ips)
     # second for VM agent jenkins
-    "10.1.0.0/20", # 10.1.0.1 -> 10.1.15.254 (4094 ips)
+    "10.0.1.0/24", # 10.0.1.1 -> 10.0.1.254 (254 ips)
     # next for eks agents
-    "10.2.0.0/20", # 10.2.0.1 -> 10.2.15.254 (4094 ips)
+    "10.0.2.0/24", # 10.0.2.1 -> 10.0.2.254 (254 ips)
   ]
   public_subnets = [ # need at least one for the module (line 1085 : subnet_id = element(aws_subnet.public[*].id,var.single_nat_gateway ? 0 : count.index,))
     #fake one
-    "10.254.0.0/24", # 10.254.0.1 -> 10.254.0.254 (254 ips)
+    "10.0.254.0/24", # 100.0.254.1 -> 10.0.254.254 (254 ips)
   ]
 
   # One NAT gateway per subnet (default)
