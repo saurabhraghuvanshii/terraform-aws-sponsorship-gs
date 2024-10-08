@@ -11,7 +11,7 @@ module "vpc" {
   version = "5.13.0"
 
   name = "${local.cluster_name}-vpc"
-  cidr = "10.0.0.0/16"
+  cidr = "10.244.0.0/14"
 
 
   # dual stack https://github.com/terraform-aws-modules/terraform-aws-vpc/blob/v5.13.0/examples/ipv6-dualstack/main.tf
@@ -29,16 +29,20 @@ module "vpc" {
   # only private subnets for security (to control allowed outbound connections)
   private_subnets = [ # only one zone
     # first VM ci.jenkins.io
-    "10.0.0.0/24", # 10.0.0.1 -> 10.0.0.254 (254 ips)
+    "10.245.1.0/24", # 10.245.1.1 -> 10.245.1.254 (254 ips)
     # second for VM agent jenkins
-    "10.0.1.0/24", # 10.0.1.1 -> 10.0.1.254 (254 ips)
+    "10.245.2.0/23", # 10.245.2.1 -> 10.245.3.254 (510 ips)
     # next for eks agents
-    "10.0.2.0/24", # 10.0.2.1 -> 10.0.2.254 (254 ips)
+    "10.245.4.0/24", # 10.245.4.1 -> 10.245.4.254 (254 ips)
   ]
   public_subnets = [ # need at least one for the module (line 1085 : subnet_id = element(aws_subnet.public[*].id,var.single_nat_gateway ? 0 : count.index,))
     #fake one
-    "10.0.254.0/24", # 100.0.254.1 -> 10.0.254.254 (254 ips)
+    "10.247.0.0/24", # 10.247.0.1 -> 10.247.0.254 (254 ips)
   ]
+
+  ## TODO analyse result
+  public_subnet_ipv6_prefixes   = [0, 1, 2]
+  private_subnet_ipv6_prefixes  = [3, 4, 5]
 
   # One NAT gateway per subnet (default)
   # ref. https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/latest#one-nat-gateway-per-subnet-default
