@@ -11,7 +11,7 @@ module "vpc" {
   version = "5.13.0"
 
   name = "${local.cluster_name}-vpc"
-  cidr = "10.0.0.0/16"
+  cidr = "10.0.0.0/8"
 
 
   # dual stack https://github.com/terraform-aws-modules/terraform-aws-vpc/blob/v5.13.0/examples/ipv6-dualstack/main.tf
