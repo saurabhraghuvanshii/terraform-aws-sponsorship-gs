@@ -8,9 +8,3 @@ variable "aws_profile" {
   default     = "terraform-developer"
   description = "AWS CLI profile to use with terraform"
 }
-
-variable "outbound_ip_count" {
-  type        = number
-  description = "Number of outbound IPs to use."
-  default     = 2
-}
