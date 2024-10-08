@@ -33,7 +33,7 @@ module "vpc" {
     # second for VM agent jenkins
     "10.245.2.0/23", # 10.245.2.1 -> 10.245.3.254 (510 ips)
     # next for eks agents
-    "10.245.4.0/24", # 10.245.4.1 -> 10.245.4.254 (254 ips)
+    "10.245.4.0/23", # 10.245.4.1 -> 10.245.5.254 (510 ips)
   ]
   public_subnets = [ # need at least one for the module (line 1085 : subnet_id = element(aws_subnet.public[*].id,var.single_nat_gateway ? 0 : count.index,))
     #fake one
