@@ -1,4 +1,5 @@
-resource "aws_eip" "nat" {
+resource "aws_eip" "nat_eip" {
+  count  = 2
   domain = "vpc"
 }
 
@@ -50,14 +51,14 @@ module "vpc" {
   ######
   ######  https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/nat_gateway
   ######
-  reuse_nat_ips       = true             # <= Skip creation of EIPs for the NAT Gateways
-  external_nat_ip_ids = aws_eip.nat.*.id # <= IPs specified here as input to the module
+  reuse_nat_ips       = true                 # <= Skip creation of EIPs for the NAT Gateways
+  external_nat_ip_ids = aws_eip.nat_eip.*.id # <= IPs specified here as input to the module
   ###### I may have to create those aws_eip with name nat manually
 
   enable_dns_hostnames = true
 
   public_subnet_tags = {
-    "kubernetes.io/role/internal-elb" = 1
+    "kubernetes.io/role/internal-elb" = 1 ###TODO CHECK
   }
 
 }
