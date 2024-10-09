@@ -1,7 +1,7 @@
 resource "aws_security_group" "restricted_ssh" {
   name        = "restricted-ssh"
   description = "Allow inbound SSH only from trusted sources (admins or VPN)"
-  vpc_id      = module.vpc.default_vpc_id
+  vpc_id      = module.vpc.vpc_id
 
   tags = local.common_tags
 }
@@ -9,7 +9,7 @@ resource "aws_security_group" "restricted_ssh" {
 resource "aws_security_group" "unrestricted_http" {
   name        = "unrestricted-http"
   description = "Allow HTTP(S) from everywhere (public services)"
-  vpc_id      = module.vpc.default_vpc_id
+  vpc_id      = module.vpc.vpc_id
 
   tags = local.common_tags
 }
