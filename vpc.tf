@@ -1,5 +1,5 @@
 resource "aws_internet_gateway" "gw" {
-  vpc_id = module.vpc.default_vpc_id
+  vpc_id = module.vpc.vpc_id
 }
 
 resource "aws_eip" "nat" {
