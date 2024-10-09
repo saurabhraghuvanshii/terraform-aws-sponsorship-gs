@@ -41,7 +41,7 @@ module "vpc" {
   ]
 
   ## TODO analyse result
-  public_subnet_ipv6_prefixes  = [0, 1, 2]
+  public_subnet_ipv6_prefixes  = [0]
   private_subnet_ipv6_prefixes = [3, 4, 5]
 
   # One NAT gateway per subnet (default)
