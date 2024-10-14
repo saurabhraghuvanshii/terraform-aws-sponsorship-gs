@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "us-east-1"
+  region = local.region
   # profile = var.aws_profile
   assume_role {
     role_arn = "arn:aws:iam::326712726440:role/infra-developer"

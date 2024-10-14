@@ -15,7 +15,7 @@ module "vpc" {
   manage_default_security_group = false
 
   # only one zone, no need for multiple availability zones
-  azs = [local.region]
+  azs = [local.our_az]
 
   # only private subnets for security (to control allowed outbound connections)
   private_subnets = [ # only one zone
