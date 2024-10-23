@@ -34,6 +34,7 @@ targets:
         - linux_arm64
         - darwin_amd64
         - darwin_arm64
+    scmid: default
 
 actions:
   default:
