@@ -12,3 +12,10 @@ provider "aws" {
 
 provider "local" {
 }
+
+provider "kubernetes" {
+  alias                  = "cik8s"
+  host                   = module.cik8s.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.cik8s.cluster_certificate_authority_data)
+  token                  = data.aws_eks_cluster_auth.cik8s.token
+}

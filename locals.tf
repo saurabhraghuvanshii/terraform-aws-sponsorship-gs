@@ -1,7 +1,11 @@
 locals {
-  ## General Settings
-  aws_account_id = "326712726440"
-  region         = "us-east-2"
+  aws_account_id               = "326712726440"
+  region                       = "us-east-2"
+  autoscaler_account_namespace = "autoscaler"
+  autoscaler_account_name      = "cluster-autoscaler-aws-cluster-autoscaler-chart"
+  ebs_account_namespace        = "kube-system"
+  ebs_account_name             = "ebs-csi-controller-sa"
+
   common_tags = {
     "scope"      = "terraform-managed"
     "repository" = "jenkins-infra/terraform-aws-sponsorship"
@@ -46,7 +50,29 @@ locals {
   ## VPC Setup
   vpc_cidr = "10.0.0.0/16" # cannot be less then /16 (more ips)
   # Public subnets use the first partition of the vpc_cidr (index 0)
-  vpc_public_subnets = { for index, subnet_name in ["controller"] : subnet_name => cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[0], 6, index) }
+  vpc_public_subnets = {
+    "controller" = {
+      az = format("${local.region}%s", "b"),
+      # First /23 of the first subset of the VPC (split in 2)
+      cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[0], 6, 0)
+    },
+  }
   # Public subnets use the second partition of the vpc_cidr (index 1)
-  vpc_private_subnets = { for index, subnet_name in ["vm-agents-1", "eks-1"] : subnet_name => cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[1], 6, index) }
+  vpc_private_subnets = {
+    "vm-agents-1" = {
+      az = format("${local.region}%s", "b"),
+      # First /23 of the second subset of the VPC (split in 2)
+      cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[1], 6, 0)
+    },
+    "eks-1" = {
+      az = format("${local.region}%s", "b"),
+      # Second /23 of the second subset of the VPC (split in 2)
+      cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[1], 6, 1)
+    }
+    "eks-2" = {
+      az = format("${local.region}%s", "c"),
+      # Third /23 of the second subset of the VPC (split in 2)
+      cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[1], 6, 2)
+    }
+  }
 }
