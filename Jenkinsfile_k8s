@@ -15,6 +15,5 @@ terraform(
 
     file(variable: 'BACKEND_CONFIG_FILE', credentialsId: 'production-terraform-aws-sponsorship-backend-config'),
   ],
-  // TODO: generate a local report to be published
-  // publishReports: ['jenkins-infra-data-reports/aws-sponsorship.json'],
+  publishReports: ['jenkins-infra-data-reports/aws-sponsorship.json'],
 )

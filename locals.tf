@@ -1,28 +1,49 @@
 locals {
-  cluster_name   = "aws-sponso"
+  ## General Settings
   aws_account_id = "326712726440"
   region         = "us-east-2"
-  our_az         = format("${local.region}%s", "b")
-  ## Tracked bu updatecli from the following source: https://reports.jenkins.io/jenkins-infra-data-reports/azure-net.json
-  ## Note: we use strings with space separator to manage type changes in updatecli's HCL parser
-  # permanent agent of update_center2
-  outbound_ips_trusted_ci_jenkins_io = "104.209.128.236 172.177.128.34 172.210.175.108 172.210.170.228"
-  # Infra.ci / Release CI controllers
-  outbound_ips_privatek8s_jenkins_io = "20.65.63.127"
-  # Terraform management and Docker-packaging build
-  outbound_ips_infracijenkinsioagents1_jenkins_io = "20.122.14.108 20.186.70.154"
-  # Connections routed through the VPN
-  outbound_ips_private_vpn_jenkins_io = "172.176.126.194"
-
-  outbound_ips = {
-    "trusted.ci.jenkins.io"              = split(" ", local.outbound_ips_trusted_ci_jenkins_io)
-    "privatek8s.jenkins.io"              = split(" ", local.outbound_ips_privatek8s_jenkins_io)
-    "infracijenkinsioagents1.jenkins.io" = split(" ", local.outbound_ips_infracijenkinsioagents1_jenkins_io)
-    "private.vpn.jenkins.io"             = split(" ", local.outbound_ips_private_vpn_jenkins_io)
-  }
-
   common_tags = {
     "scope"      = "terraform-managed"
     "repository" = "jenkins-infra/terraform-aws-sponsorship"
   }
+  #####
+  ## External and outbounds IP used by resources for network restrictions.
+  ## Note: we use scalar (strings with space separator) to manage type changes by updatecli's HCL parser
+  ##   and a map with complex type (list or strings). Ref. https://github.com/updatecli/updatecli/issues/1859#issuecomment-1884876679
+  #####
+  # Tracked by 'updatecli' from the following source: https://reports.jenkins.io/jenkins-infra-data-reports/azure-net.json
+  outbound_ips_infracijenkinsioagents1_jenkins_io = "20.122.14.108 20.186.70.154"
+  # Tracked by 'updatecli' from the following source: https://reports.jenkins.io/jenkins-infra-data-reports/azure-net.json
+  outbound_ips_private_vpn_jenkins_io = "172.176.126.194"
+  outbound_ips = {
+    # Terraform management and Docker-packaging build
+    "infracijenkinsioagents1.jenkins.io" = split(" ", local.outbound_ips_infracijenkinsioagents1_jenkins_io)
+    # Connections routed through the VPN
+    "private.vpn.jenkins.io" = split(" ", local.outbound_ips_private_vpn_jenkins_io)
+  }
+  external_ips = {
+    # Jenkins Puppet Master
+    # TODO: automate retrieval of this IP with updatecli
+    "puppet.jenkins.io" = "20.12.27.65",
+    # TODO: automate retrieval of this IP with updatecli
+    "ldap.jenkins.io" = "20.7.180.148",
+    # TODO: automate retrieval of this IP with updatecli
+    "s390x.ci.jenkins.io" = "148.100.84.76",
+  }
+  ssh_admin_ips = [
+    for ip in flatten(concat(
+      # Allow Terraform management from infra.ci agents
+      local.outbound_ips["infracijenkinsioagents1.jenkins.io"],
+      # Connections routed through the VPN
+      local.outbound_ips["private.vpn.jenkins.io"],
+    )) : ip
+    if can(cidrnetmask("${ip}/32"))
+  ]
+
+  ## VPC Setup
+  vpc_cidr = "10.0.0.0/16" # cannot be less then /16 (more ips)
+  # Public subnets use the first partition of the vpc_cidr (index 0)
+  vpc_public_subnets = { for index, subnet_name in ["controller"] : subnet_name => cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[0], 6, index) }
+  # Public subnets use the second partition of the vpc_cidr (index 1)
+  vpc_private_subnets = { for index, subnet_name in ["vm-agents-1", "eks-1"] : subnet_name => cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[1], 6, index) }
 }
