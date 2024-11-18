@@ -6,6 +6,9 @@ locals {
     "scope"      = "terraform-managed"
     "repository" = "jenkins-infra/terraform-aws-sponsorship"
   }
+
+  ci_jenkins_io_fqdn = "aws.ci.jenkins.io"
+
   #####
   ## External and outbounds IP used by resources for network restrictions.
   ## Note: we use scalar (strings with space separator) to manage type changes by updatecli's HCL parser
