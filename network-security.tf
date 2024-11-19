@@ -10,6 +10,42 @@ resource "aws_network_acl" "ci_jenkins_io_controller" {
 
   ## Get started with https://docs.aws.amazon.com/vpc/latest/userguide/custom-network-acl.html
 
+  # Allow inbound HTTP from Internet
+  ingress {
+    protocol   = "tcp"
+    rule_no    = 100
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 80
+    to_port    = 80
+  }
+  ingress {
+    protocol        = "tcp"
+    rule_no         = 105
+    action          = "allow"
+    ipv6_cidr_block = "::/0"
+    from_port       = 80
+    to_port         = 80
+  }
+
+  # Allow inbound HTTPS from Internet
+  ingress {
+    protocol   = "tcp"
+    rule_no    = 110
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 443
+    to_port    = 443
+  }
+  ingress {
+    protocol        = "tcp"
+    rule_no         = 115
+    action          = "allow"
+    ipv6_cidr_block = "::/0"
+    from_port       = 443
+    to_port         = 443
+  }
+
   # Allow inbound SSH (IPv4 only) from trusted IPs only
   dynamic "ingress" {
     for_each = toset(local.ssh_admin_ips)
@@ -454,21 +490,3 @@ resource "aws_vpc_security_group_ingress_rule" "allow_jnlp_in_private_subnets" {
   ip_protocol = "tcp"
   to_port     = 50000
 }
-
-# ci.jenkins.io -> internet
-#   - HTTP/HTTPS
-#   - HKP
-#   - LDAPS (636) (only on ldap.jenkins.io)
-#   - Puppet (8140) (only on puppet.jenkins.io)
-#   - SSH (git) ?
-
-# ci.jenkins.io -> VM agents
-#   - Port 22 (SSH)
-
-# internet -> ci.jenkins.io
-#   - HTTPS: 443
-#   - SSH: 22 (from VPN only)
-
-# VM agents -> ci.jenkins.io
-#   - JNLP: 50000
-#   - HTTPS(websocket): 443 => disabled dans Apache (pour le moment)
