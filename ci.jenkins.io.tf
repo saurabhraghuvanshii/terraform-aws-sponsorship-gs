@@ -12,6 +12,70 @@ resource "aws_eip_association" "ci_jenkins_io" {
   allocation_id = aws_eip.ci_jenkins_io.id
 }
 
+### IAM Resources (to allow instance profile instance of credentials for the controller VM to use ec2 plugin)
+data "aws_iam_policy_document" "assume_role_ec2" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+resource "aws_iam_role" "ci_jenkins_io" {
+  name = "ci-jenkins-io"
+
+  assume_role_policy = data.aws_iam_policy_document.assume_role_ec2.json
+
+  tags = local.common_tags
+}
+resource "aws_iam_instance_profile" "ci_jenkins_io" {
+  name = "ci-jenkins-io"
+  role = aws_iam_role.ci_jenkins_io.name
+}
+resource "aws_iam_role_policy" "ci_jenkins_io_ec2_agents" {
+  name = "ci-jenkins-io-ec2-agents"
+  role = aws_iam_role.ci_jenkins_io.id
+
+  policy = data.aws_iam_policy_document.jenkins_ec2_agents.json
+}
+# Permissions required by Jenkins EC2 plugin in https://plugins.jenkins.io/ec2/#plugin-content-iam-setup
+data "aws_iam_policy_document" "jenkins_ec2_agents" {
+  # Minimum set of permissions
+  statement {
+    sid    = "jenkinsEC2"
+    effect = "Allow"
+
+    actions = [
+      "ec2:DescribeSpotInstanceRequests",
+      "ec2:CancelSpotInstanceRequests",
+      "ec2:GetConsoleOutput",
+      "ec2:RequestSpotInstances",
+      "ec2:RunInstances",
+      "ec2:StartInstances",
+      "ec2:StopInstances",
+      "ec2:TerminateInstances",
+      "ec2:CreateTags",
+      "ec2:DeleteTags",
+      "ec2:DescribeInstances",
+      "ec2:DescribeInstanceTypes",
+      "ec2:DescribeKeyPairs",
+      "ec2:DescribeRegions",
+      "ec2:DescribeImages",
+      "ec2:DescribeAvailabilityZones",
+      "ec2:DescribeSecurityGroups",
+      "ec2:DescribeSubnets",
+      "iam:ListInstanceProfilesForRole",
+      "iam:PassRole",
+      "ec2:GetPasswordData",
+    ]
+    ## We allow all resources names
+    # tfsec:ignore:AWS099
+    resources = ["*"]
+  }
+}
+
 ### Compute Resources
 resource "aws_key_pair" "ci_jenkins_io" {
   key_name = "ci-jenkins-io"
@@ -22,6 +86,8 @@ resource "aws_key_pair" "ci_jenkins_io" {
 resource "aws_instance" "ci_jenkins_io" {
   ami           = "ami-0700ac71a4832f3b3" # Ubuntu 22.04 - arm64 - 2024-11-15 (no need to update it unless if recreating the VM)
   instance_type = "m8g.xlarge"            # 4vcpu 16Go https://aws.amazon.com/fr/ec2/instance-types/
+
+  iam_instance_profile = aws_iam_instance_profile.ci_jenkins_io.name
 
   subnet_id                   = module.vpc.public_subnets[0]
   associate_public_ip_address = true
@@ -54,6 +120,8 @@ resource "aws_instance" "ci_jenkins_io" {
   metadata_options {
     # EC2 recommends setting IMDSv2 to required - https://aws.amazon.com/blogs/security/get-the-full-benefits-of-imdsv2-and-disable-imdsv1-across-your-aws-infrastructure/
     http_tokens = "required"
+    # Needed to obtain IMDSv2 token from inside a docker container with a NAT network
+    http_put_response_hop_limit = 2
   }
 
   tags = merge(
