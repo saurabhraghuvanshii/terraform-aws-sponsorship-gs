@@ -120,8 +120,8 @@ resource "aws_instance" "ci_jenkins_io" {
   metadata_options {
     # EC2 recommends setting IMDSv2 to required - https://aws.amazon.com/blogs/security/get-the-full-benefits-of-imdsv2-and-disable-imdsv1-across-your-aws-infrastructure/
     http_tokens = "required"
-    # Needed to obtain IMDSv2 token from inside a docker container with a NAT network
-    http_put_response_hop_limit = 2
+    # Needed to obtain IMDSv2 token from inside a docker container with a NAT network + AWS SDK proxy
+    http_put_response_hop_limit = 3
   }
 
   tags = merge(
