@@ -11,7 +11,7 @@ resource "aws_kms_key" "cijenkinsio-agents-2" {
 # EKS Cluster definition
 module "cijenkinsio-agents-2" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "20.26.1"
+  version = "20.29.0"
 
   cluster_name = "cijenkinsio-agents-2"
   # Kubernetes version in format '<MINOR>.<MINOR>', as per https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html
