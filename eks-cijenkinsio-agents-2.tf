@@ -62,22 +62,25 @@ module "cijenkinsio-agents-2" {
   ## Manage EKS addons with module - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eks_addon
   # See new versions with `aws eks describe-addon-versions --kubernetes-version <k8s-version> --addon-name <addon>`
   cluster_addons = {
-    # https://github.com/coredns/coredns/releases
+    # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
     coredns = {
-      addon_version = "v1.11.3-eksbuild.1"
+      addon_version = "v1.11.3-eksbuild.2"
     }
     # Kube-proxy on an Amazon EKS cluster has the same compatibility and skew policy as Kubernetes
     # See https://kubernetes.io/releases/version-skew-policy/#kube-proxy
     kube-proxy = {
-      addon_version = "v1.29.7-eksbuild.9"
+      # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
+      addon_version = "v1.29.10-eksbuild.3"
     }
     # https://github.com/aws/amazon-vpc-cni-k8s/releases
     vpc-cni = {
-      addon_version = "v1.18.5-eksbuild.1"
+      # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
+      addon_version = "v1.19.0-eksbuild.1"
     }
     # https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/CHANGELOG.md
     aws-ebs-csi-driver = {
-      addon_version = "v1.36.0-eksbuild.1"
+      # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
+      addon_version = "v1.37.0-eksbuild.1"
       # TODO specify service account
       # service_account_role_arn = module.cijenkinsio-agents-2_irsa_ebs.iam_role_arn
     }
