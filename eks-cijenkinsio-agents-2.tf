@@ -36,12 +36,11 @@ module "cijenkinsio-agents-2" {
     resources        = ["secrets"]
   }
 
-  cluster_endpoint_public_access = true
-  cluster_endpoint_public_access_cidrs = [
-    "20.122.14.108/32",   # curl --silent --location https://reports.jenkins.io/jenkins-infra-data-reports/azure-net.json | jq -r '."infracijenkinsioagents1.jenkins.io"' ip1
-    "20.186.70.154/32",   # curl --silent --location https://reports.jenkins.io/jenkins-infra-data-reports/azure-net.json | jq -r '."infracijenkinsioagents1.jenkins.io"' ip2
-    "172.176.126.194/32", # VPN TODO export VPN outbound ip to https://reports.jenkins.io/jenkins-infra-data-reports/azure-net.json (https://github.com/jenkins-infra/azure-net/blob/518a250bb7d7f76f0b6b8c90b8f362a686253853/vpn.tf#L118C11-L118C40)
-  ]
+  # We don't want to use private access (as cluster is managed from infra.ci in Azure)
+  cluster_endpoint_private_access = false
+  cluster_endpoint_public_access  = true
+  # However only infra.ci agents and VPN can access the API
+  cluster_endpoint_public_access_cidrs = local.ssh_admin_ips
 
   create_cluster_primary_security_group_tags = false
 
