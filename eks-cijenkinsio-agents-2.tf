@@ -48,9 +48,8 @@ module "cijenkinsio-agents-2" {
   # To avoid having and implicit dependency to a resource not available when parsing the module (infamous errror `Error: Invalid for_each argument`)
   # Ref. same error as having a `depends_on` in https://github.com/terraform-aws-modules/terraform-aws-eks/issues/2337
   tags = merge(local.common_tags, {
-    Environment = "jenkins-infra-${terraform.workspace}"
-    GithubRepo  = "terraform-aws-sponsorship"
-    GithubOrg   = "jenkins-infra"
+    GithubRepo = "terraform-aws-sponsorship"
+    GithubOrg  = "jenkins-infra"
 
     associated_service = "eks/cijenkinsio-agents-2"
   })
@@ -89,21 +88,14 @@ module "cijenkinsio-agents-2" {
     tiny_ondemand_linux = {
       # This worker pool is expected to host the "technical" services such as pod autoscaler, etc.
       name = "tiny-ondemand-linux"
-      # role is create within terraform-states
-      create_iam_role = false
-      iam_role_arn    = "arn:aws:iam::326712726440:role/cijio-agents-2-np-tiny-ondemand-linux"
 
-      instance_types       = ["t3a.xlarge"] # 2vcpu 8Gio
-      capacity_type        = "ON_DEMAND"
-      min_size             = 1
-      max_size             = 2 # Allow manual scaling when running operations or upgrades
-      desired_size         = 1
-      bootstrap_extra_args = "--kubelet-extra-args '--node-labels=node.kubernetes.io/lifecycle=normal'"
-      suspended_processes  = ["AZRebalance"]
-      tags = merge(local.common_tags, {
-        "k8s.io/cluster-autoscaler/enabled" = false # No autoscaling for these 2 machines
-      }),
-      attach_cluster_primary_security_group = true
+      instance_types = ["t4g.large"] # 2vcpu 8Gio
+      capacity_type  = "ON_DEMAND"
+      # Starting on 1.30, AL2023 is the default AMI type for EKS managed node groups
+      ami_type     = "AL2023_x86_64_STANDARD"
+      min_size     = 1
+      max_size     = 3
+      desired_size = 1
     },
 
 
