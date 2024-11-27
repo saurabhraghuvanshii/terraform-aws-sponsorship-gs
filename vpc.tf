@@ -21,8 +21,8 @@ module "vpc" {
   azs = [for subnet_name, subnet_data in local.vpc_private_subnets : subnet_data.az]
 
   # only private subnets for security (to control allowed outbound connections)
-  private_subnets = [for subnet_name, subnet_data in local.vpc_private_subnets : subnet_data.cidr]
-  public_subnets  = [for subnet_name, subnet_data in local.vpc_public_subnets : subnet_data.cidr]
+  private_subnets = [for subnet in local.vpc_private_subnets : subnet.cidr]
+  public_subnets  = [for subnet in local.vpc_public_subnets : subnet.cidr]
 
   public_subnet_ipv6_prefixes  = range(length(local.vpc_public_subnets))
   private_subnet_ipv6_prefixes = range(10, length(local.vpc_private_subnets) + 10)
