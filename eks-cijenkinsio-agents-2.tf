@@ -19,7 +19,7 @@ module "cijenkinsio-agents-2" {
   create_iam_role = true
 
   # 2 AZs are mandatory for EKS https://docs.aws.amazon.com/eks/latest/userguide/network-reqs.html#network-requirements-subnets
-  subnet_ids = slice(module.vpc.private_subnets, 2, 3)
+  subnet_ids = slice(module.vpc.private_subnets, 1, 3)
   # Required to allow EKS service accounts to authenticate to AWS API through OIDC (and assume IAM roles)
   # useful for autoscaler, EKS addons and any AWS APi usage
   enable_irsa = true
