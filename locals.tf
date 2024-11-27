@@ -50,29 +50,32 @@ locals {
   ## VPC Setup
   vpc_cidr = "10.0.0.0/16" # cannot be less then /16 (more ips)
   # Public subnets use the first partition of the vpc_cidr (index 0)
-  vpc_public_subnets = {
-    "controller" = {
-      az = format("${local.region}%s", "b"),
+  vpc_public_subnets = [
+    {
+      name = "controller",
+      az   = format("${local.region}%s", "b"),
       # First /23 of the first subset of the VPC (split in 2)
       cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[0], 6, 0)
     },
-  }
+  ]
   # Public subnets use the second partition of the vpc_cidr (index 1)
-  vpc_private_subnets = {
-    "vm-agents-1" = {
-      az = format("${local.region}%s", "b"),
+  vpc_private_subnets = [
+    {
+      name = "eks-1",
+      az   = format("${local.region}%s", "b"),
+      # Second /23 of the second subset of the VPC (split in 2)
+      cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[1], 6, 1)
+    },
+    {
+      name = "vm-agents-1",
+      az   = format("${local.region}%s", "b"),
       # First /23 of the second subset of the VPC (split in 2)
       cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[1], 6, 0)
     },
-    "eks-1" = {
-      az = format("${local.region}%s", "b"),
-      # Second /23 of the second subset of the VPC (split in 2)
-      cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[1], 6, 1)
-    }
-    "eks-2" = {
-      az = format("${local.region}%s", "c"),
+    { name = "eks-2",
+      az   = format("${local.region}%s", "c"),
       # Third /23 of the second subset of the VPC (split in 2)
       cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[1], 6, 2)
     }
-  }
+  ]
 }
