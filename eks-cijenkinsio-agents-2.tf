@@ -92,7 +92,7 @@ module "cijenkinsio-agents-2" {
       instance_types = ["t4g.large"] # 2vcpu 8Gio
       capacity_type  = "ON_DEMAND"
       # Starting on 1.30, AL2023 is the default AMI type for EKS managed node groups
-      ami_type     = "AL2023_x86_64_STANDARD"
+      ami_type     = "AL2023_ARM_64_STANDARD"
       min_size     = 1
       max_size     = 3
       desired_size = 1
