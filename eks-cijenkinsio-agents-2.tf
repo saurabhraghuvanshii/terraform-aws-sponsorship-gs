@@ -40,7 +40,7 @@ module "cijenkinsio-agents-2" {
   cluster_endpoint_private_access = false
   cluster_endpoint_public_access  = true
   # However only infra.ci agents and VPN can access the API
-  cluster_endpoint_public_access_cidrs = local.ssh_admin_ips
+  cluster_endpoint_public_access_cidrs = [for admin_ip in local.ssh_admin_ips : "${admin_ip}/32"]
 
   create_cluster_primary_security_group_tags = false
 
