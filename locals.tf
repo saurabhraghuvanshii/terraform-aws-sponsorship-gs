@@ -61,16 +61,16 @@ locals {
   # Public subnets use the second partition of the vpc_cidr (index 1)
   vpc_private_subnets = [
     {
-      name = "eks-1",
-      az   = format("${local.region}%s", "b"),
-      # Second /23 of the second subset of the VPC (split in 2)
-      cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[1], 6, 1)
-    },
-    {
       name = "vm-agents-1",
       az   = format("${local.region}%s", "b"),
       # First /23 of the second subset of the VPC (split in 2)
       cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[1], 6, 0)
+    },
+    {
+      name = "eks-1",
+      az   = format("${local.region}%s", "b"),
+      # Second /23 of the second subset of the VPC (split in 2)
+      cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[1], 6, 1)
     },
     { name = "eks-2",
       az   = format("${local.region}%s", "c"),
