@@ -19,7 +19,10 @@ module "cijenkinsio-agents-2" {
   create_iam_role = true
 
   # 2 AZs are mandatory for EKS https://docs.aws.amazon.com/eks/latest/userguide/network-reqs.html#network-requirements-subnets
-  subnet_ids = slice(module.vpc.private_subnets, 1, 3)
+  subnet_ids = concat(
+    slice(module.vpc.public_subnets, 1, 1),  # Public subnet required to allow egress to Internet, distinct from controller public subnet
+    slice(module.vpc.private_subnets, 1, 3), # Private subnets: at least 2 in dinstincts AZ (EKS requirement), used by nodes
+  )
   # Required to allow EKS service accounts to authenticate to AWS API through OIDC (and assume IAM roles)
   # useful for autoscaler, EKS addons and any AWS APi usage
   enable_irsa = true
@@ -75,13 +78,17 @@ module "cijenkinsio-agents-2" {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
       addon_version = "v1.19.0-eksbuild.1"
     }
-    # https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/CHANGELOG.md
-    aws-ebs-csi-driver = {
+    eks-pod-identity-agent = {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
-      addon_version = "v1.37.0-eksbuild.1"
-      # TODO specify service account
-      # service_account_role_arn = module.cijenkinsio-agents-2_irsa_ebs.iam_role_arn
+      addon_version = "v1.3.4-eksbuild.1"
     }
+    ## https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/CHANGELOG.md
+    # aws-ebs-csi-driver = {
+    #   # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
+    #   addon_version = "v1.37.0-eksbuild.1"
+    #   # TODO specify service account
+    #   # service_account_role_arn = module.cijenkinsio-agents-2_irsa_ebs.iam_role_arn
+    # }
   }
 
   eks_managed_node_groups = {
@@ -93,145 +100,10 @@ module "cijenkinsio-agents-2" {
       capacity_type  = "ON_DEMAND"
       # Starting on 1.30, AL2023 is the default AMI type for EKS managed node groups
       ami_type     = "AL2023_ARM_64_STANDARD"
-      min_size     = 1
+      min_size     = 2
       max_size     = 3
-      desired_size = 1
+      desired_size = 2
     },
-
-
-
-    # # This list of worker pool is aimed at mixed spot instances type, to ensure that we always get the most available (e.g. the cheaper) spot size
-    # # as per https://aws.amazon.com/blogs/compute/cost-optimization-and-resilience-eks-with-spot-instances/
-    # # Pricing table for 2023: https://docs.google.com/spreadsheets/d/1_C0I0jE-X0e0vDcdKOFIWcnwpOqWC8RQ4YOCgXNnplY/edit?usp=sharing
-    # spot_linux_4xlarge = {
-    #   # 4xlarge: Instances supporting 3 pods (limited to 4 vCPUs/8 Gb) each with 1 vCPU/1Gb margin
-    #   name          = "spot-linux-4xlarge"
-    #   capacity_type = "SPOT"
-    #   # Less than 5% eviction rate, cost below $0.08 per pod per hour
-    #   instance_types = [
-    #     "c5.4xlarge",
-    #     "c5a.4xlarge"
-    #   ]
-    #   block_device_mappings = {
-    #     xvda = {
-    #       device_name = "/dev/xvda"
-    #       ebs = {
-    #         volume_size           = 90 # With 3 pods / machine, that can use ~30 Gb each at the same time (`emptyDir`)
-    #         volume_type           = "gp3"
-    #         iops                  = 3000 # Max included with gp3 without additional cost
-    #         throughput            = 125  # Max included with gp3 without additional cost
-    #         encrypted             = false
-    #         delete_on_termination = true
-    #       }
-    #     }
-    #   }
-    #   spot_instance_pools      = 3              # Amount of different instance that we can use depends on spot_allocation_strategy = lowest-price
-    #   spot_allocation_strategy = "lowest-price" # depends on spot_instance_pools
-    #   min_size                 = 0
-    #   max_size                 = 50
-    #   desired_size             = 0
-    #   kubelet_extra_args       = "--node-labels=node.kubernetes.io/lifecycle=spot"
-    #   tags = merge(local.common_tags, {
-    #     "k8s.io/cluster-autoscaler/enabled"              = true,
-    #     "k8s.io/cluster-autoscaler/cijenkinsio-agents-2" = "owned",
-    #     "ci.jenkins.io/agents-density"                   = 3,
-    #   })
-    #   attach_cluster_primary_security_group = true
-    #   labels = {
-    #     "ci.jenkins.io/agents-density" = 3,
-    #   }
-    # },
-    # # This list of worker pool is aimed at mixed spot instances type, to ensure that we always get the most available (e.g. the cheaper) spot size
-    # # as per https://aws.amazon.com/blogs/compute/cost-optimization-and-resilience-eks-with-spot-instances/
-    # # Pricing table for 2023: https://docs.google.com/spreadsheets/d/1_C0I0jE-X0e0vDcdKOFIWcnwpOqWC8RQ4YOCgXNnplY/edit?usp=sharing
-    # spot_linux_4xlarge_bom = {
-    #   # 4xlarge: Instances supporting 3 pods (limited to 4 vCPUs/8 Gb) each with 1 vCPU/1Gb margin
-    #   name          = "spot-linux-4xlarge-bom"
-    #   capacity_type = "SPOT"
-    #   # Less than 5% eviction rate, cost below $0.08 per pod per hour
-    #   instance_types = [
-    #     "c5.4xlarge",
-    #     "c5a.4xlarge"
-    #   ]
-    #   block_device_mappings = {
-    #     xvda = {
-    #       device_name = "/dev/xvda"
-    #       ebs = {
-    #         volume_size           = 90 # With 3 pods / machine, that can use ~30 Gb each at the same time (`emptyDir`)
-    #         volume_type           = "gp3"
-    #         iops                  = 3000 # Max included with gp3 without additional cost
-    #         throughput            = 125  # Max included with gp3 without additional cost
-    #         encrypted             = false
-    #         delete_on_termination = true
-    #       }
-    #     }
-    #   }
-    #   spot_instance_pools = 3 # Amount of different instance that we can use
-    #   min_size            = 0
-    #   max_size            = 50
-    #   desired_size        = 0
-    #   kubelet_extra_args  = "--node-labels=node.kubernetes.io/lifecycle=spot"
-    #   tags = merge(local.common_tags, {
-    #     "k8s.io/cluster-autoscaler/enabled"              = true,
-    #     "k8s.io/cluster-autoscaler/cijenkinsio-agents-2" = "owned",
-    #     "ci.jenkins.io/agents-density"                   = 3,
-    #   })
-    #   attach_cluster_primary_security_group = true
-    #   labels = {
-    #     "ci.jenkins.io/agents-density" = 3,
-    #     "ci.jenkins.io/bom"            = true,
-    #   }
-    #   taints = [
-    #     {
-    #       key    = "ci.jenkins.io/bom"
-    #       value  = "true"
-    #       effect = "NO_SCHEDULE"
-    #     }
-    #   ]
-    # },
-    # spot_linux_24xlarge_bom = {
-    #   # 24xlarge: Instances supporting 23 pods (limited to 4 vCPUs/8 Gb) each with 1 vCPU/1Gb margin
-    #   name          = "spot-linux-24xlarge"
-    #   capacity_type = "SPOT"
-    #   # Less than 5% eviction rate, cost below $0.05 per pod per hour
-    #   instance_types = [
-    #     "m5.24xlarge",
-    #     "c5.24xlarge",
-    #   ]
-    #   block_device_mappings = {
-    #     xvda = {
-    #       device_name = "/dev/xvda"
-    #       ebs = {
-    #         volume_size           = 575 # With 23 pods / machine, that can use ~25 Gb each at the same time (`emptyDir`)
-    #         volume_type           = "gp3"
-    #         iops                  = 3000 # Max included with gp3 without additional cost
-    #         throughput            = 125  # Max included with gp3 without additional cost
-    #         encrypted             = false
-    #         delete_on_termination = true
-    #       }
-    #     }
-    #   }
-    #   spot_instance_pools = 2 # Amount of different instance that we can use
-    #   min_size            = 0
-    #   max_size            = 15
-    #   desired_size        = 0
-    #   kubelet_extra_args  = "--node-labels=node.kubernetes.io/lifecycle=spot"
-    #   tags = merge(local.common_tags, {
-    #     "k8s.io/cluster-autoscaler/enabled"              = true,
-    #     "k8s.io/cluster-autoscaler/cijenkinsio-agents-2" = "owned",
-    #   })
-    #   attach_cluster_primary_security_group = true
-    #   labels = {
-    #     "ci.jenkins.io/agents-density" = 23,
-    #   }
-    #   taints = [
-    #     {
-    #       key    = "ci.jenkins.io/bom"
-    #       value  = "true"
-    #       effect = "NO_SCHEDULE"
-    #     }
-    #   ]
-    # },
   }
 
   # Allow egress from nodes (and pods...)
@@ -256,99 +128,3 @@ module "cijenkinsio-agents-2" {
     },
   }
 }
-
-# module "cijenkinsio-agents-2_iam_role_autoscaler" {
-#   source                        = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-#   version                       = "v5.47.1"
-#   create_role                   = true
-#   role_name                     = "${local.autoscaler_account_name}-cijenkinsio-agents-2"
-#   provider_url                  = replace(module.cijenkinsio-agents-2.cluster_oidc_issuer_url, "https://", "")
-#   role_policy_arns              = [aws_iam_policy.cluster_autoscaler_cijenkinsio-agents-2.arn]
-#   oidc_fully_qualified_subjects = ["system:serviceaccount:${local.autoscaler_account_namespace}:${local.autoscaler_account_name}"]
-
-#   tags = merge(local.common_tags, {
-#     associated_service = "eks/${module.cijenkinsio-agents-2.cluster_name}"
-#   })
-# }
-
-# module "cijenkinsio-agents-2_irsa_ebs" {
-#   source                        = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-#   version                       = "v5.47.1"
-#   create_role                   = true
-#   role_name                     = "${local.ebs_account_name}-cijenkinsio-agents-2"
-#   provider_url                  = replace(module.cijenkinsio-agents-2.cluster_oidc_issuer_url, "https://", "")
-#   role_policy_arns              = [aws_iam_policy.ebs_csi.arn]
-#   oidc_fully_qualified_subjects = ["system:serviceaccount:${local.ebs_account_namespace}:${local.ebs_account_name}"]
-
-#   tags = merge(local.common_tags, {
-#     associated_service = "eks/${module.cijenkinsio-agents-2.cluster_name}"
-#   })
-# }
-
-# # Configure the jenkins-infra/kubernetes-management admin service account
-# module "cijenkinsio-agents-2_admin_sa" {
-#   providers = {
-#     kubernetes = kubernetes.cijenkinsio-agents-2
-#   }
-#   source                     = "./.shared-tools/terraform/modules/kubernetes-admin-sa"
-#   cluster_name               = module.cijenkinsio-agents-2.cluster_name
-#   cluster_hostname           = module.cijenkinsio-agents-2.cluster_endpoint
-#   cluster_ca_certificate_b64 = module.cijenkinsio-agents-2.cluster_certificate_authority_data
-#   svcaccount_admin_name      = "ciadmin"
-# }
-
-# output "kubeconfig_cijenkinsio-agents-2" {
-#   sensitive = true
-#   value     = module.cijenkinsio-agents-2_admin_sa.kubeconfig
-# }
-
-# data "aws_eks_cluster" "cijenkinsio-agents-2" {
-#   name = module.cijenkinsio-agents-2.cluster_name
-# }
-
-# data "aws_eks_cluster_auth" "cijenkinsio-agents-2" {
-#   name = module.cijenkinsio-agents-2.cluster_name
-# }
-
-# ## No restriction on the resources: either managed outside terraform, or already scoped by conditions
-# #trivy:ignore:aws-iam-no-policy-wildcards
-# data "aws_iam_policy_document" "cluster_autoscaler_cijenkinsio-agents-2" {
-#   # Statements as per https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md#full-cluster-autoscaler-features-policy-recommended
-#   statement {
-#     sid    = "unrestricted"
-#     effect = "Allow"
-
-#     actions = [
-#       "autoscaling:DescribeAutoScalingGroups",
-#       "autoscaling:DescribeAutoScalingInstances",
-#       "autoscaling:DescribeLaunchConfigurations",
-#       "autoscaling:DescribeScalingActivities",
-#       "autoscaling:DescribeTags",
-#       "ec2:DescribeInstanceTypes",
-#       "ec2:DescribeLaunchTemplateVersions"
-#     ]
-
-#     resources = ["*"]
-#   }
-
-#   statement {
-#     sid    = "restricted"
-#     effect = "Allow"
-
-#     actions = [
-#       "autoscaling:SetDesiredCapacity",
-#       "autoscaling:TerminateInstanceInAutoScalingGroup",
-#       "ec2:DescribeImages",
-#       "ec2:GetInstanceTypesFromInstanceRequirements",
-#       "eks:DescribeNodegroup"
-#     ]
-
-#     resources = ["*"]
-#   }
-# }
-
-# resource "aws_iam_policy" "cluster_autoscaler_cijenkinsio-agents-2" {
-#   name_prefix = "cluster-autoscaler-cijenkinsio-agents-2"
-#   description = "EKS cluster-autoscaler policy for cluster ${module.cijenkinsio-agents-2.cluster_name}"
-#   policy      = data.aws_iam_policy_document.cluster_autoscaler_cijenkinsio-agents-2.json
-# }
