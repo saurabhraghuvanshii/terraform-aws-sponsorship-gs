@@ -20,8 +20,8 @@ module "cijenkinsio-agents-2" {
 
   # 2 AZs are mandatory for EKS https://docs.aws.amazon.com/eks/latest/userguide/network-reqs.html#network-requirements-subnets
   subnet_ids = concat(
-    slice(module.vpc.public_subnets, 1, 1),  # Public subnet required to allow egress to Internet, distinct from controller public subnet
-    slice(module.vpc.private_subnets, 1, 3), # Private subnets: at least 2 in dinstincts AZ (EKS requirement), used by nodes
+    slice(module.vpc.public_subnets, 1, 2),  # Public subnet required to allow egress to Internet, distinct from controller public subnet
+    slice(module.vpc.private_subnets, 1, 3), # Private subnets: at least 2 in distincts AZ (EKS requirement), used by nodes
   )
   # Required to allow EKS service accounts to authenticate to AWS API through OIDC (and assume IAM roles)
   # useful for autoscaler, EKS addons and any AWS APi usage
@@ -39,10 +39,12 @@ module "cijenkinsio-agents-2" {
     resources        = ["secrets"]
   }
 
-  # We only want to private access to the Controle Plane except from infra.ci agents and VPN CIDRs (running outside AWS)
-  cluster_endpoint_private_access = false
-  cluster_endpoint_public_access  = true # https://docs.aws.amazon.com/eks/latest/userguide/cluster-endpoint.html#cluster-endpoint-private
+  ## We only want to private access to the Control Plane except from infra.ci agents and VPN CIDRs (running outside AWS)
+  cluster_endpoint_public_access       = true
   cluster_endpoint_public_access_cidrs = [for admin_ip in local.ssh_admin_ips : "${admin_ip}/32"]
+  # Nodes and Pods require access to the Control Plane - https://docs.aws.amazon.com/eks/latest/userguide/cluster-endpoint.html#cluster-endpoint-private
+  # without needing to allow their IPs
+  cluster_endpoint_private_access = true
 
   create_cluster_primary_security_group_tags = false
 
