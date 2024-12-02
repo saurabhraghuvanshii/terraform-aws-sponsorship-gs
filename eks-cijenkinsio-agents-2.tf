@@ -20,8 +20,8 @@ module "cijenkinsio-agents-2" {
 
   # 2 AZs are mandatory for EKS https://docs.aws.amazon.com/eks/latest/userguide/network-reqs.html#network-requirements-subnets
   subnet_ids = concat(
-    slice(module.vpc.public_subnets, 1, 1),  # Public subnet required to allow egress to Internet, distinct from controller public subnet
-    slice(module.vpc.private_subnets, 1, 3), # Private subnets: at least 2 in dinstincts AZ (EKS requirement), used by nodes
+    slice(module.vpc.public_subnets, 1, 2),  # Public subnet required to allow egress to Internet, distinct from controller public subnet
+    slice(module.vpc.private_subnets, 1, 3), # Private subnets: at least 2 in distincts AZ (EKS requirement), used by nodes
   )
   # Required to allow EKS service accounts to authenticate to AWS API through OIDC (and assume IAM roles)
   # useful for autoscaler, EKS addons and any AWS APi usage
