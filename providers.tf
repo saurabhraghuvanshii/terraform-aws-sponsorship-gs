@@ -12,3 +12,19 @@ provider "aws" {
 
 provider "local" {
 }
+
+provider "cloudinit" {
+  # Required by the EKS module
+}
+
+provider "null" {
+  # Required by the EKS module
+}
+
+provider "time" {
+  # Required by the EKS module
+}
+
+provider "tls" {
+  # Required by the EKS module
+}
