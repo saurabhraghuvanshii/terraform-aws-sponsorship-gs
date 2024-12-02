@@ -197,6 +197,8 @@ resource "aws_network_acl" "ci_jenkins_io_controller" {
 }
 
 resource "aws_network_acl" "ci_jenkins_io_vm_agents" {
+  # No IPv6 on this one
+
   # Do NOT use the "default_vpc_id" module output ;)
   vpc_id     = module.vpc.vpc_id
   subnet_ids = [module.vpc.private_subnets[0]]
@@ -212,13 +214,15 @@ resource "aws_network_acl" "ci_jenkins_io_vm_agents" {
     from_port  = 32768
     to_port    = 65535
   }
+
+  # Allow inbound SSH from controller only (private route)
   ingress {
-    protocol        = "tcp"
-    rule_no         = 145
-    action          = "allow"
-    ipv6_cidr_block = "::/0"
-    from_port       = 32768
-    to_port         = 65535
+    protocol   = "tcp"
+    rule_no    = 120
+    action     = "allow"
+    cidr_block = "${aws_instance.ci_jenkins_io.private_ip}/32"
+    from_port  = 22
+    to_port    = 22
   }
 
   # Allow outbound HTTP
@@ -230,14 +234,6 @@ resource "aws_network_acl" "ci_jenkins_io_vm_agents" {
     from_port  = 80
     to_port    = 80
   }
-  egress {
-    protocol        = "tcp"
-    rule_no         = 105
-    action          = "allow"
-    ipv6_cidr_block = "::/0"
-    from_port       = 80
-    to_port         = 80
-  }
 
   # Allow outbound HTTPS
   egress {
@@ -247,14 +243,6 @@ resource "aws_network_acl" "ci_jenkins_io_vm_agents" {
     cidr_block = "0.0.0.0/0"
     from_port  = 443
     to_port    = 443
-  }
-  egress {
-    protocol        = "tcp"
-    rule_no         = 115
-    action          = "allow"
-    ipv6_cidr_block = "::/0"
-    from_port       = 443
-    to_port         = 443
   }
 
   # Allow outbound HKP (OpenPGP KeyServer) - https://github.com/jenkins-infra/helpdesk/issues/3664
@@ -266,17 +254,46 @@ resource "aws_network_acl" "ci_jenkins_io_vm_agents" {
     from_port  = 11371
     to_port    = 11371
   }
+
+  # Allow outbound TCP Jenkins Agent JNLP protocol to controller only
   egress {
-    protocol        = "tcp"
-    rule_no         = 125
-    action          = "allow"
-    ipv6_cidr_block = "::/0"
-    from_port       = 11371
-    to_port         = 11371
+    protocol   = "tcp"
+    rule_no    = 150
+    action     = "allow"
+    cidr_block = "${aws_eip.ci_jenkins_io.public_ip}/32"
+    from_port  = 50000
+    to_port    = 50000
+  }
+
+  # Ephemeral ports in response to inbound requests
+  egress {
+    protocol   = "tcp"
+    rule_no    = 140
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 32768
+    to_port    = 65535
   }
 }
 
 ### Security Groups
+resource "aws_security_group" "ephemeral_vm_agents" {
+  name        = "ephemeral-vm-agents"
+  description = "Allow inbound SSH only from ci.jenkins.io controller"
+  vpc_id      = module.vpc.vpc_id
+
+  tags = local.common_tags
+}
+
+resource "aws_vpc_security_group_ingress_rule" "allow_ssh_from_cijio_controller" {
+  description       = "Allow inbound SSH from ci.jenkins.io controller"
+  security_group_id = aws_security_group.ephemeral_vm_agents.id
+  cidr_ipv4         = "${aws_instance.ci_jenkins_io.private_ip}/32"
+  from_port         = 22
+  ip_protocol       = "tcp"
+  to_port           = 22
+}
+
 resource "aws_security_group" "restricted_in_ssh" {
   name        = "restricted-in-ssh"
   description = "Allow inbound SSH only from trusted sources (admins or VPN)"
