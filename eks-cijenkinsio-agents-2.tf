@@ -39,10 +39,12 @@ module "cijenkinsio-agents-2" {
     resources        = ["secrets"]
   }
 
-  # We only want to private access to the Controle Plane except from infra.ci agents and VPN CIDRs (running outside AWS)
-  cluster_endpoint_private_access = false
-  cluster_endpoint_public_access  = true # https://docs.aws.amazon.com/eks/latest/userguide/cluster-endpoint.html#cluster-endpoint-private
+  ## We only want to private access to the Control Plane except from infra.ci agents and VPN CIDRs (running outside AWS)
+  cluster_endpoint_public_access       = true
   cluster_endpoint_public_access_cidrs = [for admin_ip in local.ssh_admin_ips : "${admin_ip}/32"]
+  # Nodes and Pods require access to the Control Plane - https://docs.aws.amazon.com/eks/latest/userguide/cluster-endpoint.html#cluster-endpoint-private
+  # without needing to allow their IPs
+  cluster_endpoint_private_access = true
 
   create_cluster_primary_security_group_tags = false
 
