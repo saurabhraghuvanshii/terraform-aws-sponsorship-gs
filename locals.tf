@@ -57,12 +57,6 @@ locals {
       # First /23 of the first subset of the VPC (split in 2)
       cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[0], 6, 0)
     },
-    {
-      name = "eks-public-1",
-      az   = format("${local.region}%s", "b"),
-      # Second /23 of the first subset of the VPC (split in 2)
-      cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[0], 6, 1)
-    },
   ]
   # Public subnets use the second partition of the vpc_cidr (index 1)
   vpc_private_subnets = [
