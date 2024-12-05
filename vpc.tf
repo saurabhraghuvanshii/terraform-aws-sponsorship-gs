@@ -26,13 +26,12 @@ module "vpc" {
 
   # only private subnets for security (to control allowed outbound connections)
   private_subnets      = [for subnet in local.vpc_private_subnets : subnet.cidr]
-  public_subnets       = [for subnet in local.vpc_public_subnets : subnet.cidr]
   private_subnet_names = [for subnet in local.vpc_private_subnets : subnet.name]
   private_subnet_tags  = local.common_tags
 
-
-  # public_subnet_names = [for subnet in local.vpc_public_subnets : subnet.name]
-  # public_subnet_tags  = local.common_tags
+  public_subnets      = [for subnet in local.vpc_public_subnets : subnet.cidr]
+  public_subnet_names = [for subnet in local.vpc_public_subnets : subnet.name]
+  public_subnet_tags  = local.common_tags
 
   public_subnet_ipv6_prefixes = range(length(local.vpc_public_subnets))
 
