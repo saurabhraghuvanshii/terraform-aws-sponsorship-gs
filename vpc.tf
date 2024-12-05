@@ -21,13 +21,13 @@ module "vpc" {
   manage_default_route_table    = false
   manage_default_security_group = false
 
-  # only one zone, no need for multiple availability zones
   azs = [for subnet_name, subnet_data in local.vpc_private_subnets : subnet_data.az]
 
-  # only private subnets for security (to control allowed outbound connections)
   private_subnets      = [for subnet in local.vpc_private_subnets : subnet.cidr]
   private_subnet_names = [for subnet in local.vpc_private_subnets : subnet.name]
   private_subnet_tags  = local.common_tags
+
+  create_private_nat_gateway_route = true
 
   public_subnets      = [for subnet in local.vpc_public_subnets : subnet.cidr]
   public_subnet_names = [for subnet in local.vpc_public_subnets : subnet.name]
@@ -35,13 +35,10 @@ module "vpc" {
 
   public_subnet_ipv6_prefixes = range(length(local.vpc_public_subnets))
 
-  # private_subnet_ipv6_prefixes = range(10, length(local.vpc_private_subnets) + 10)
-
   # One NAT gateway per subnet (default)
   # ref. https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/latest#one-nat-gateway-per-subnet-default
   enable_nat_gateway = true
   single_nat_gateway = false
-  # one_nat_gateway_per_az = true
 
   enable_dns_hostnames = true
 }
