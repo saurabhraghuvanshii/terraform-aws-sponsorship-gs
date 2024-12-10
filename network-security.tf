@@ -65,16 +65,18 @@ resource "aws_network_acl" "ci_jenkins_io_controller" {
     rule_no    = 140
     action     = "allow"
     cidr_block = "0.0.0.0/0"
-    from_port  = 32768
-    to_port    = 65535
+    #  A NAT gateway uses ports 1024–65535
+    from_port = 1024
+    to_port   = 65535
   }
   ingress {
     protocol        = "tcp"
     rule_no         = 145
     action          = "allow"
     ipv6_cidr_block = "::/0"
-    from_port       = 32768
-    to_port         = 65535
+    #  A NAT gateway uses ports 1024–65535
+    from_port = 1024
+    to_port   = 65535
   }
 
   # Allow inbound TCP Jenkins Agent JNLP protocol from private subnets only
@@ -271,8 +273,9 @@ resource "aws_network_acl" "ci_jenkins_io_vm_agents" {
     rule_no    = 140
     action     = "allow"
     cidr_block = "0.0.0.0/0"
-    from_port  = 32768
-    to_port    = 65535
+    #  A NAT gateway uses ports 1024–65535
+    from_port = 1024
+    to_port   = 65535
   }
 }
 
