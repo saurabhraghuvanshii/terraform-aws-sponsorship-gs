@@ -32,6 +32,24 @@ module "cijenkinsio-agents-2" {
   # avoid using config map to specify admin accesses (decrease attack surface)
   authentication_mode = "API"
 
+  access_entries = {
+    # One access entry with a policy associated
+    human_cluster_admins = {
+      principal_arn = "arn:aws:iam::326712726440:role/infra-admin"
+      type          = "STANDARD"
+
+      policy_associations = {
+        example = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = {
+            type       = "cluster"
+            namespaces = null
+          }
+        }
+      }
+    }
+  }
+
   create_kms_key = false
   cluster_encryption_config = {
     provider_key_arn = aws_kms_key.cijenkinsio-agents-2.arn

@@ -10,6 +10,9 @@ resource "local_file" "jenkins_infra_data_report" {
         ),
       },
     },
+    "cijenkinsio-agents-2" = {
+      "cluster_endpoint" = module.cijenkinsio-agents-2.cluster_endpoint
+    },
   })
   filename = "${path.module}/jenkins-infra-data-reports/aws-sponsorship.json"
 }
