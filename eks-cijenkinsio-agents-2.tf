@@ -159,3 +159,8 @@ module "cijenkinsio-agents-2_admin_sa" {
   cluster_hostname           = module.cijenkinsio-agents-2.cluster_endpoint
   cluster_ca_certificate_b64 = module.cijenkinsio-agents-2.cluster_certificate_authority_data
 }
+
+output "kubeconfig_cijenkinsio-agents-2" {
+  sensitive = true
+  value     = module.cijenkinsio-agents-2_admin_sa.kubeconfig
+}
