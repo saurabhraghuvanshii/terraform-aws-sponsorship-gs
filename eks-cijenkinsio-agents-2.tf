@@ -148,3 +148,14 @@ module "cijenkinsio-agents-2" {
     },
   }
 }
+
+# Configure the jenkins-infra/kubernetes-management admin service account
+module "cijenkinsio-agents-2_admin_sa" {
+  providers = {
+    kubernetes = kubernetes.cijenkinsio-agents-2
+  }
+  source                     = "./.shared-tools/terraform/modules/kubernetes-admin-sa"
+  cluster_name               = module.cijenkinsio-agents-2.cluster_name
+  cluster_hostname           = module.cijenkinsio-agents-2.cluster_endpoint
+  cluster_ca_certificate_b64 = module.cijenkinsio-agents-2.cluster_certificate_authority_data
+}
