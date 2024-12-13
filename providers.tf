@@ -28,3 +28,9 @@ provider "time" {
 provider "tls" {
   # Required by the EKS module
 }
+
+provider "kubernetes" {
+  alias                  = "cijenkinsio-agents-2"
+  host                   = module.cijenkinsio-agents-2.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.cijenkinsio-agents-2.cluster_certificate_authority_data)
+}
