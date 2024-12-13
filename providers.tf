@@ -29,8 +29,7 @@ provider "tls" {
   # Required by the EKS module
 }
 
+# There are other kubernetes providers defined in other files with specific auth.
+# This one is a placeholder to ensure lock file has the proper setup
 provider "kubernetes" {
-  alias                  = "cijenkinsio-agents-2"
-  host                   = module.cijenkinsio-agents-2.cluster_endpoint
-  cluster_ca_certificate = base64decode(module.cijenkinsio-agents-2.cluster_certificate_authority_data)
 }

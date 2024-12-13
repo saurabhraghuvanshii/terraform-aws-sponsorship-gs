@@ -150,6 +150,17 @@ module "cijenkinsio-agents-2" {
 }
 
 # Configure the jenkins-infra/kubernetes-management admin service account
+data "aws_eks_cluster_auth" "cijenkinsio-agents-2" {
+  name = module.cijenkinsio-agents-2.cluster_name
+}
+
+provider "kubernetes" {
+  alias                  = "cijenkinsio-agents-2"
+  host                   = module.cijenkinsio-agents-2.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.cijenkinsio-agents-2.cluster_certificate_authority_data)
+  token                  = data.aws_eks_cluster_auth.cijenkinsio-agents-2.token
+}
+
 module "cijenkinsio-agents-2_admin_sa" {
   providers = {
     kubernetes = kubernetes.cijenkinsio-agents-2
