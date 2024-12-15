@@ -9,6 +9,13 @@ resource "local_file" "jenkins_infra_data_report" {
           [aws_eip.ci_jenkins_io.public_ip],         # Public IPv4 of the controller
         ),
       },
+      "ec2-agents" = {
+        "subnet_ids" = [module.vpc.private_subnets[0]],
+        "security_group_names" = [
+          aws_security_group.ephemeral_vm_agents.name,
+          aws_security_group.unrestricted_out_http.name,
+        ]
+      },
     },
     "cijenkinsio-agents-2" = {
       "cluster_endpoint" = module.cijenkinsio-agents-2.cluster_endpoint
