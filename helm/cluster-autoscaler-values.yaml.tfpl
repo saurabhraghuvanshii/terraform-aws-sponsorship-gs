@@ -1,0 +1,19 @@
+---
+awsRegion: ${region}
+
+nodeSelector:
+  role: applications
+
+extraArgs:
+  balance-similar-node-groups: true
+replicaCount: 2
+
+rbac:
+  create: true
+  serviceAccount:
+    name: ${serviceAccountName}
+    annotations:
+      eks.amazonaws.com/role-arn: ${autoscalerRoleArn} # todo check it match this kind of string "arn:aws:iam::200564066411:role/cluster-autoscaler-aws-cluster-autoscaler-chart-eks"
+
+autoDiscovery:
+  enabled: true
