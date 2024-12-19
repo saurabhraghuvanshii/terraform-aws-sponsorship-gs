@@ -84,21 +84,61 @@ module "cijenkinsio-agents-2" {
     # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
     coredns = {
       addon_version = "v1.11.3-eksbuild.2"
+      configuration_values = jsonencode({
+        "tolerations" : [
+          {
+            "effect" : "NoSchedule",
+            "key" : "ci.jenkins.io/applications",
+            "operator" : "Equal",
+            "value" : "true"
+          }
+        ]
+      })
     }
     # Kube-proxy on an Amazon EKS cluster has the same compatibility and skew policy as Kubernetes
     # See https://kubernetes.io/releases/version-skew-policy/#kube-proxy
     kube-proxy = {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
       addon_version = "v1.29.10-eksbuild.3"
+      configuration_values = jsonencode({
+        "tolerations" : [
+          {
+            "effect" : "NoSchedule",
+            "key" : "ci.jenkins.io/applications",
+            "operator" : "Equal",
+            "value" : "true"
+          }
+        ]
+      })
     }
     # https://github.com/aws/amazon-vpc-cni-k8s/releases
     vpc-cni = {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
       addon_version = "v1.19.0-eksbuild.1"
+      configuration_values = jsonencode({
+        "tolerations" : [
+          {
+            "effect" : "NoSchedule",
+            "key" : "ci.jenkins.io/applications",
+            "operator" : "Equal",
+            "value" : "true"
+          }
+        ]
+      })
     }
     eks-pod-identity-agent = {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
       addon_version = "v1.3.4-eksbuild.1"
+      configuration_values = jsonencode({
+        "tolerations" : [
+          {
+            "effect" : "NoSchedule",
+            "key" : "ci.jenkins.io/applications",
+            "operator" : "Equal",
+            "value" : "true"
+          }
+        ]
+      })
     }
     ## https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/CHANGELOG.md
     # aws-ebs-csi-driver = {
@@ -121,6 +161,18 @@ module "cijenkinsio-agents-2" {
       min_size     = 1
       max_size     = 3
       desired_size = 1
+
+      labels = {
+        jenkins = "ci.jenkins.io"
+        role    = "applications"
+      }
+      taints = {
+        applications = {
+          key    = "ci.jenkins.io/applications"
+          value  = "true"
+          effect = "NO_SCHEDULE"
+        }
+      }
 
       subnet_ids = slice(module.vpc.private_subnets, 1, 2) # Only 1 subnet in 1 AZ
     },
