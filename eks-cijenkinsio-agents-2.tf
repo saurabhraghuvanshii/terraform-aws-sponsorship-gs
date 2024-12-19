@@ -150,7 +150,7 @@ module "cijenkinsio-agents-2" {
 }
 
 module "autoscaler_irsa_role" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   # TODO track with updatecli
   version = "5.48.0"
 
@@ -179,6 +179,28 @@ provider "kubernetes" {
   host                   = module.cijenkinsio-agents-2.cluster_endpoint
   cluster_ca_certificate = base64decode(module.cijenkinsio-agents-2.cluster_certificate_authority_data)
   token                  = data.aws_eks_cluster_auth.cijenkinsio-agents-2.token
+}
+
+provider "helm" {
+  alias = "cijenkinsio-agents-2"
+  kubernetes {
+    host                   = module.cijenkinsio-agents-2.cluster_endpoint
+    token                  = data.aws_eks_cluster_auth.cijenkinsio-agents-2.token
+    cluster_ca_certificate = base64decode(module.cijenkinsio-agents-2.cluster_certificate_authority_data)
+  }
+}
+
+resource "helm_release" "cluster-autoscaler" {
+  name       = "cluster_autoscaler"
+  repository = "https://kubernetes.github.io/autoscaler"
+  chart      = "cluster-autoscaler"
+  version    = "9.43.2"
+
+  values = templatefile("./helm/cluster-autoscaler-values.yaml.tfpl", {
+    region             = local.region,
+    serviceAccountName = local.autoscaler_account_name,
+    autoscalerRoleArn  = module.autoscaler_irsa_role.iam_role_arn,
+  })
 }
 
 module "cijenkinsio-agents-2_admin_sa" {
