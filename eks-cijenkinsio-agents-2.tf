@@ -201,6 +201,26 @@ module "cijenkinsio-agents-2" {
   }
 }
 
+module "autoscaler_irsa_role" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  # TODO track with updatecli
+  version = "5.48.0"
+
+  role_name                        = "${module.cijenkinsio-agents-2.cluster_name}-cluster-autoscaler"
+  attach_cluster_autoscaler_policy = true
+
+  cluster_autoscaler_cluster_names = [module.cijenkinsio-agents-2.cluster_name]
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.cijenkinsio-agents-2.oidc_provider_arn
+      namespace_service_accounts = ["${local.autoscaler_account_namespace}:${local.autoscaler_account_name}"]
+    }
+  }
+
+  tags = local.common_tags
+}
+
 # Configure the jenkins-infra/kubernetes-management admin service account
 data "aws_eks_cluster_auth" "cijenkinsio-agents-2" {
   name = module.cijenkinsio-agents-2.cluster_name
