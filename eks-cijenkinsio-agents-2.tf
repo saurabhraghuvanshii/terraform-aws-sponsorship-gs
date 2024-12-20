@@ -191,13 +191,13 @@ module "autoscaler_irsa_role" {
 }
 
 # Used by kubernetes/helm provider to authenticate to cluster with the AWS IAM identity (using a token)
-data "aws_eks_cluster_auth" "cijenkinsio-agents-2" {
+data "aws_eks_cluster_auth" "cijenkinsio_agents_2" {
   name = module.cijenkinsio_agents_2.cluster_name
 }
 
 ### Install Cluster Autoscaler
 resource "helm_release" "cluster-autoscaler" {
-  provider   = helm.cijenkinsio-agents-2
+  provider   = helm.cijenkinsio_agents_2
   name       = "cluster-autoscaler"
   repository = "https://kubernetes.github.io/autoscaler"
   chart      = "cluster-autoscaler"
@@ -221,14 +221,14 @@ resource "helm_release" "cluster-autoscaler" {
 ### Define admin credential to be used in jenkins-infra/kubernetes-management
 module "cijenkinsio_agents_2_admin_sa" {
   providers = {
-    kubernetes = kubernetes.cijenkinsio-agents-2
+    kubernetes = kubernetes.cijenkinsio_agents_2
   }
   source                     = "./.shared-tools/terraform/modules/kubernetes-admin-sa"
   cluster_name               = module.cijenkinsio_agents_2.cluster_name
   cluster_hostname           = module.cijenkinsio_agents_2.cluster_endpoint
   cluster_ca_certificate_b64 = module.cijenkinsio_agents_2.cluster_certificate_authority_data
 }
-output "kubeconfig_cijenkinsio-agents-2" {
+output "kubeconfig_cijenkinsio_agents_2" {
   sensitive = true
   value     = module.cijenkinsio_agents_2_admin_sa.kubeconfig
 }
