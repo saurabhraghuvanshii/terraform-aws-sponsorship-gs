@@ -15,7 +15,7 @@ locals {
   cijenkinsio_agents_2 = {
     autoscaler = {
       namespace      = "autoscaler",
-      serviceaccount = "cluster-autoscaler-aws-cluster-autoscaler-chart",
+      serviceaccount = "autoscaler",
     },
     tolerations = {
       applications = [

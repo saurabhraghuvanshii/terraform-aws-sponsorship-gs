@@ -1,10 +1,8 @@
 ---
-awsRegion: ${region}
+awsRegion: "${region}"
 
 nodeSelector:
-%{ for label_key, label_value in nodeSelectors ~}
-  ${label_key}: "${label_value}"
-%{ endfor ~}
+${yamlencode(nodeSelectors)}
 
 tolerations:
 ${yamlencode(nodeTolerations)}
