@@ -8,19 +8,6 @@ resource "aws_kms_key" "cijenkinsio-agents-2" {
   })
 }
 
-locals {
-  cijenkinsio_agents_2_tolerations = {
-    applications = [
-      {
-        "effect" : "NoSchedule",
-        "key" : "${local.ci_jenkins_io_fqdn}/applications",
-        "operator" : "Equal",
-        "value" : "true"
-      },
-    ],
-  }
-}
-
 # EKS Cluster definition
 module "cijenkinsio-agents-2" {
   source  = "terraform-aws-modules/eks/aws"
@@ -99,7 +86,7 @@ module "cijenkinsio-agents-2" {
       # TODO: track with updatecli
       addon_version = "v1.11.3-eksbuild.2"
       configuration_values = jsonencode({
-        "tolerations" = local.cijenkinsio_agents_2_tolerations["applications"],
+        "tolerations" = local.cijenkinsio_agents_2["tolerations"]["applications"],
       })
     }
     # Kube-proxy on an Amazon EKS cluster has the same compatibility and skew policy as Kubernetes
@@ -115,7 +102,7 @@ module "cijenkinsio-agents-2" {
       # TODO: track with updatecli
       addon_version = "v1.19.0-eksbuild.1"
       configuration_values = jsonencode({
-        "tolerations" = local.cijenkinsio_agents_2_tolerations["applications"],
+        "tolerations" = local.cijenkinsio_agents_2["tolerations"]["applications"],
       })
     }
     eks-pod-identity-agent = {
@@ -123,7 +110,7 @@ module "cijenkinsio-agents-2" {
       # TODO: track with updatecli
       addon_version = "v1.3.4-eksbuild.1"
       configuration_values = jsonencode({
-        "tolerations" = local.cijenkinsio_agents_2_tolerations["applications"],
+        "tolerations" = local.cijenkinsio_agents_2["tolerations"]["applications"],
       })
     }
     ## https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/CHANGELOG.md
@@ -133,6 +120,8 @@ module "cijenkinsio-agents-2" {
     #   # TODO specify service account
     #   # service_account_role_arn = module.cijenkinsio-agents-2_irsa_ebs.iam_role_arn
     # }
+    # locals: ebs_account_namespace = "kube-system"
+    # locals: ebs_account_name      = "ebs-csi-controller-sa"
   }
 
   eks_managed_node_groups = {
@@ -151,10 +140,10 @@ module "cijenkinsio-agents-2" {
       subnet_ids = slice(module.vpc.private_subnets, 1, 2) # Only 1 subnet in 1 AZ (for EBS)
 
       labels = {
-        jenkins = local.ci_jenkins_io_service_fqdn
+        jenkins = local.ci_jenkins_io["service_fqdn"]
         role    = "applications"
       }
-      taints = { for toleration_key, toleration_value in local.cijenkinsio_agents_2_tolerations["applications"] :
+      taints = { for toleration_key, toleration_value in local.cijenkinsio_agents_2["tolerations"]["applications"] :
         toleration_key => {
           key    = toleration_value["key"],
           value  = toleration_value.value
@@ -200,31 +189,16 @@ module "autoscaler_irsa_role" {
   oidc_providers = {
     main = {
       provider_arn               = module.cijenkinsio-agents-2.oidc_provider_arn
-      namespace_service_accounts = ["${local.autoscaler_account_namespace}:${local.autoscaler_account_name}"]
+      namespace_service_accounts = ["${local.cijenkinsio_agents_2["autoscaler"]["namespace"]}:${local.cijenkinsio_agents_2["autoscaler"]["serviceaccount"]}"]
     }
   }
 
   tags = local.common_tags
 }
 
-### Define custom providers associated to this cluster (could be in providers.tf as alternative)
+# Used by kubernetes/helm provider to authenticate to cluster with the AWS IAM identity (using a token)
 data "aws_eks_cluster_auth" "cijenkinsio-agents-2" {
   name = module.cijenkinsio-agents-2.cluster_name
-}
-provider "kubernetes" {
-  alias                  = "cijenkinsio-agents-2"
-  host                   = module.cijenkinsio-agents-2.cluster_endpoint
-  cluster_ca_certificate = base64decode(module.cijenkinsio-agents-2.cluster_certificate_authority_data)
-  token                  = data.aws_eks_cluster_auth.cijenkinsio-agents-2.token
-}
-provider "helm" {
-  alias = "cijenkinsio-agents-2"
-
-  kubernetes {
-    host                   = module.cijenkinsio-agents-2.cluster_endpoint
-    token                  = data.aws_eks_cluster_auth.cijenkinsio-agents-2.token
-    cluster_ca_certificate = base64decode(module.cijenkinsio-agents-2.cluster_certificate_authority_data)
-  }
 }
 
 ### Install Cluster Autoscaler
@@ -236,12 +210,12 @@ resource "helm_release" "cluster-autoscaler" {
   # TODO: track with updatecli
   version          = "9.43.2"
   create_namespace = true
-  namespace        = local.autoscaler_account_namespace
+  namespace        = local.cijenkinsio_agents_2["autoscaler"]["namespace"]
 
   values = [
     templatefile("./helm/cluster-autoscaler-values.yaml.tfpl", {
       region             = local.region,
-      serviceAccountName = local.autoscaler_account_name,
+      serviceAccountName = local.cijenkinsio_agents_2["autoscaler"]["serviceaccount"],
       autoscalerRoleArn  = module.autoscaler_irsa_role.iam_role_arn,
       clusterName        = module.cijenkinsio-agents-2.cluster_name,
       nodeSelectors      = module.cijenkinsio-agents-2.eks_managed_node_groups["tiny_ondemand_linux"].node_group_labels,

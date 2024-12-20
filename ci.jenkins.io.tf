@@ -103,7 +103,7 @@ resource "aws_instance" "ci_jenkins_io" {
 
   disable_api_termination = true # Protect ourselves from accidental deletion
 
-  user_data = templatefile("${path.root}/.shared-tools/terraform/cloudinit.tftpl", { hostname = local.ci_jenkins_io_fqdn, admin_username = "ubuntu" })
+  user_data = templatefile("${path.root}/.shared-tools/terraform/cloudinit.tftpl", { hostname = local.ci_jenkins_io["controller_vm_fqdn"], admin_username = "ubuntu" })
 
   root_block_device {
     delete_on_termination = false # Even if we terminate the machine
@@ -133,14 +133,14 @@ resource "aws_instance" "ci_jenkins_io" {
 ### DNS Zone delegated from Azure DNS (jenkins-infra/azure-net)
 # `updatecli` maintains sync between the 2 repositories using the infra reports (see outputs.tf)
 resource "aws_route53_zone" "aws_ci_jenkins_io" {
-  name = local.ci_jenkins_io_fqdn
+  name = local.ci_jenkins_io["controller_vm_fqdn"]
 
   tags = local.common_tags
 }
 
 resource "aws_route53_record" "a_aws_ci_jenkins_io" {
   zone_id = aws_route53_zone.aws_ci_jenkins_io.zone_id
-  name    = local.ci_jenkins_io_fqdn
+  name    = local.ci_jenkins_io["controller_vm_fqdn"]
   type    = "A"
   ttl     = 60
   records = [aws_eip.ci_jenkins_io.public_ip]
@@ -148,7 +148,7 @@ resource "aws_route53_record" "a_aws_ci_jenkins_io" {
 
 resource "aws_route53_record" "aaaa_aws_ci_jenkins_io" {
   zone_id = aws_route53_zone.aws_ci_jenkins_io.zone_id
-  name    = local.ci_jenkins_io_fqdn
+  name    = local.ci_jenkins_io["controller_vm_fqdn"]
   type    = "AAAA"
   ttl     = 60
   records = aws_instance.ci_jenkins_io.ipv6_addresses
