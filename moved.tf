@@ -12,5 +12,5 @@ moved {
 }
 moved {
   from = helm_release.cluster-autoscaler
-  to = helm_release.cluster_autoscaler
+  to   = helm_release.cluster_autoscaler
 }
