@@ -111,7 +111,7 @@ module "cijenkinsio-agents-2" {
 
   eks_managed_node_groups = {
     tiny_ondemand_linux = {
-      # This worker pool is expected to host the "technical" services such as pod autoscaler, etc.
+      # This worker pool is expected to host the "technical" services such as cluster-autoscaler, data cluster-agent, ACP, etc.
       name = "tiny-ondemand-linux"
 
       instance_types = ["t4g.large"] # 2vcpu 8Gio
@@ -122,7 +122,19 @@ module "cijenkinsio-agents-2" {
       max_size     = 3
       desired_size = 1
 
-      subnet_ids = slice(module.vpc.private_subnets, 1, 2) # Only 1 subnet in 1 AZ
+      subnet_ids = slice(module.vpc.private_subnets, 1, 2) # Only 1 subnet in 1 AZ (for EBS)
+
+      labels = {
+        jenkins = local.ci_jenkins_io_service_fqdn
+        role    = "applications"
+      }
+      taints = {
+        applications = {
+          key    = "${local.ci_jenkins_io_fqdn}/applications"
+          value  = "true"
+          effect = "NO_SCHEDULE"
+        }
+      }
     },
   }
 
@@ -169,20 +181,19 @@ module "autoscaler_irsa_role" {
   tags = local.common_tags
 }
 
-# Configure the jenkins-infra/kubernetes-management admin service account
+### Define custom providers associated to this cluster (could be in providers.tf as alternative)
 data "aws_eks_cluster_auth" "cijenkinsio-agents-2" {
   name = module.cijenkinsio-agents-2.cluster_name
 }
-
 provider "kubernetes" {
   alias                  = "cijenkinsio-agents-2"
   host                   = module.cijenkinsio-agents-2.cluster_endpoint
   cluster_ca_certificate = base64decode(module.cijenkinsio-agents-2.cluster_certificate_authority_data)
   token                  = data.aws_eks_cluster_auth.cijenkinsio-agents-2.token
 }
-
 provider "helm" {
   alias = "cijenkinsio-agents-2"
+
   kubernetes {
     host                   = module.cijenkinsio-agents-2.cluster_endpoint
     token                  = data.aws_eks_cluster_auth.cijenkinsio-agents-2.token
@@ -190,19 +201,30 @@ provider "helm" {
   }
 }
 
+### Install Cluster Autoscaler
 resource "helm_release" "cluster-autoscaler" {
-  name       = "cluster_autoscaler"
+  provider   = helm.cijenkinsio-agents-2
+  name       = "cluster-autoscaler"
   repository = "https://kubernetes.github.io/autoscaler"
   chart      = "cluster-autoscaler"
-  version    = "9.43.2"
+  # TODO: track with updatecli
+  version          = "9.43.2"
+  create_namespace = true
+  namespace        = local.autoscaler_account_namespace
 
-  values = [templatefile("./helm/cluster-autoscaler-values.yaml.tfpl", {
-    region             = local.region,
-    serviceAccountName = local.autoscaler_account_name,
-    autoscalerRoleArn  = module.autoscaler_irsa_role.iam_role_arn,
-  })]
+  values = [
+    templatefile("./helm/cluster-autoscaler-values.yaml.tfpl", {
+      region             = local.region,
+      serviceAccountName = local.autoscaler_account_name,
+      autoscalerRoleArn  = module.autoscaler_irsa_role.iam_role_arn,
+      clusterName        = module.cijenkinsio-agents-2.cluster_name,
+      nodeSelectors      = module.cijenkinsio-agents-2.eks_managed_node_groups["tiny_ondemand_linux"].node_group_labels,
+      nodeTolerations    = module.cijenkinsio-agents-2.eks_managed_node_groups["tiny_ondemand_linux"].node_group_taints,
+    })
+  ]
 }
 
+### Define admin credential to be used in jenkins-infra/kubernetes-management
 module "cijenkinsio-agents-2_admin_sa" {
   providers = {
     kubernetes = kubernetes.cijenkinsio-agents-2
@@ -212,7 +234,6 @@ module "cijenkinsio-agents-2_admin_sa" {
   cluster_hostname           = module.cijenkinsio-agents-2.cluster_endpoint
   cluster_ca_certificate_b64 = module.cijenkinsio-agents-2.cluster_certificate_authority_data
 }
-
 output "kubeconfig_cijenkinsio-agents-2" {
   sensitive = true
   value     = module.cijenkinsio-agents-2_admin_sa.kubeconfig

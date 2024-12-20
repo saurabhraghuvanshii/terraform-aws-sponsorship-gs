@@ -11,7 +11,8 @@ locals {
     "repository" = "jenkins-infra/terraform-aws-sponsorship"
   }
 
-  ci_jenkins_io_fqdn = "aws.ci.jenkins.io"
+  ci_jenkins_io_service_fqdn = "ci.jenkins.io"
+  ci_jenkins_io_fqdn         = "aws.${local.ci_jenkins_io_service_fqdn}"
 
   #####
   ## External and outbounds IP used by resources for network restrictions.
