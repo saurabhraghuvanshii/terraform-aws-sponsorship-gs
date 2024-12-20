@@ -14,6 +14,12 @@ locals {
   ci_jenkins_io_service_fqdn = "ci.jenkins.io"
   ci_jenkins_io_fqdn         = "aws.${local.ci_jenkins_io_service_fqdn}"
 
+  toleration_taint_effects = {
+    "NoSchedule"       = "NO_SCHEDULE",
+    "NoExecute"        = "NO_EXECUTE",
+    "PreferNoSchedule" = "PREFER_NO_SCHEDULE",
+  }
+
   #####
   ## External and outbounds IP used by resources for network restrictions.
   ## Note: we use scalar (strings with space separator) to manage type changes by updatecli's HCL parser

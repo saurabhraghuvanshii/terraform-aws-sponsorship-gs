@@ -8,6 +8,19 @@ resource "aws_kms_key" "cijenkinsio-agents-2" {
   })
 }
 
+locals {
+  cijenkinsio_agents_2_tolerations = {
+    applications = [
+      {
+        "effect" : "NoSchedule",
+        "key" : "${local.ci_jenkins_io_fqdn}/applications",
+        "operator" : "Equal",
+        "value" : "true"
+      },
+    ],
+  }
+}
+
 # EKS Cluster definition
 module "cijenkinsio-agents-2" {
   source  = "terraform-aws-modules/eks/aws"
@@ -81,63 +94,36 @@ module "cijenkinsio-agents-2" {
   ## Manage EKS addons with module - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eks_addon
   # See new versions with `aws eks describe-addon-versions --kubernetes-version <k8s-version> --addon-name <addon>`
   cluster_addons = {
-    # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
     coredns = {
+      # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
+      # TODO: track with updatecli
       addon_version = "v1.11.3-eksbuild.2"
       configuration_values = jsonencode({
-        "tolerations" : [
-          {
-            "effect" : "NoSchedule",
-            "key" : "ci.jenkins.io/applications",
-            "operator" : "Equal",
-            "value" : "true"
-          }
-        ]
+        "tolerations" = local.cijenkinsio_agents_2_tolerations["applications"],
       })
     }
     # Kube-proxy on an Amazon EKS cluster has the same compatibility and skew policy as Kubernetes
     # See https://kubernetes.io/releases/version-skew-policy/#kube-proxy
     kube-proxy = {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
+      # TODO: track with updatecli
       addon_version = "v1.29.10-eksbuild.3"
-      configuration_values = jsonencode({
-        "tolerations" : [
-          {
-            "effect" : "NoSchedule",
-            "key" : "ci.jenkins.io/applications",
-            "operator" : "Equal",
-            "value" : "true"
-          }
-        ]
-      })
     }
     # https://github.com/aws/amazon-vpc-cni-k8s/releases
     vpc-cni = {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
+      # TODO: track with updatecli
       addon_version = "v1.19.0-eksbuild.1"
       configuration_values = jsonencode({
-        "tolerations" : [
-          {
-            "effect" : "NoSchedule",
-            "key" : "ci.jenkins.io/applications",
-            "operator" : "Equal",
-            "value" : "true"
-          }
-        ]
+        "tolerations" = local.cijenkinsio_agents_2_tolerations["applications"],
       })
     }
     eks-pod-identity-agent = {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
+      # TODO: track with updatecli
       addon_version = "v1.3.4-eksbuild.1"
       configuration_values = jsonencode({
-        "tolerations" : [
-          {
-            "effect" : "NoSchedule",
-            "key" : "ci.jenkins.io/applications",
-            "operator" : "Equal",
-            "value" : "true"
-          }
-        ]
+        "tolerations" = local.cijenkinsio_agents_2_tolerations["applications"],
       })
     }
     ## https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/CHANGELOG.md
@@ -168,11 +154,11 @@ module "cijenkinsio-agents-2" {
         jenkins = local.ci_jenkins_io_service_fqdn
         role    = "applications"
       }
-      taints = {
-        applications = {
-          key    = "${local.ci_jenkins_io_fqdn}/applications"
-          value  = "true"
-          effect = "NO_SCHEDULE"
+      taints = { for toleration_key, toleration_value in local.cijenkinsio_agents_2_tolerations["applications"] :
+        toleration_key => {
+          key    = toleration_value["key"],
+          value  = toleration_value.value
+          effect = local.toleration_taint_effects[toleration_value.effect]
         }
       }
     },
