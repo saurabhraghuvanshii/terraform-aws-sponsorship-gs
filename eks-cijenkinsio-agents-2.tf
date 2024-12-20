@@ -1,5 +1,5 @@
 # Define a KMS main key to encrypt the EKS cluster
-resource "aws_kms_key" "cijenkinsio-agents-2" {
+resource "aws_kms_key" "cijenkinsio_agents_2" {
   description         = "EKS Secret Encryption Key for the cluster cijenkinsio-agents-2"
   enable_key_rotation = true
 
@@ -9,7 +9,7 @@ resource "aws_kms_key" "cijenkinsio-agents-2" {
 }
 
 # EKS Cluster definition
-module "cijenkinsio-agents-2" {
+module "cijenkinsio_agents_2" {
   source  = "terraform-aws-modules/eks/aws"
   version = "20.29.0"
 
@@ -52,7 +52,7 @@ module "cijenkinsio-agents-2" {
 
   create_kms_key = false
   cluster_encryption_config = {
-    provider_key_arn = aws_kms_key.cijenkinsio-agents-2.arn
+    provider_key_arn = aws_kms_key.cijenkinsio_agents_2.arn
     resources        = ["secrets"]
   }
 
@@ -112,7 +112,7 @@ module "cijenkinsio-agents-2" {
     #   # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
     #   addon_version = "v1.37.0-eksbuild.1"
     #   # TODO specify service account
-    #   # service_account_role_arn = module.cijenkinsio-agents-2_irsa_ebs.iam_role_arn
+    #   # service_account_role_arn = module.cijenkinsio_agents_2_irsa_ebs.iam_role_arn
     # }
     # locals: ebs_account_namespace = "kube-system"
     # locals: ebs_account_name      = "ebs-csi-controller-sa"
@@ -175,14 +175,14 @@ module "autoscaler_irsa_role" {
   # TODO track with updatecli
   version = "5.48.0"
 
-  role_name                        = "${module.cijenkinsio-agents-2.cluster_name}-cluster-autoscaler"
+  role_name                        = "${module.cijenkinsio_agents_2.cluster_name}-cluster-autoscaler"
   attach_cluster_autoscaler_policy = true
 
-  cluster_autoscaler_cluster_names = [module.cijenkinsio-agents-2.cluster_name]
+  cluster_autoscaler_cluster_names = [module.cijenkinsio_agents_2.cluster_name]
 
   oidc_providers = {
     main = {
-      provider_arn               = module.cijenkinsio-agents-2.oidc_provider_arn
+      provider_arn               = module.cijenkinsio_agents_2.oidc_provider_arn
       namespace_service_accounts = ["${local.cijenkinsio_agents_2["autoscaler"]["namespace"]}:${local.cijenkinsio_agents_2["autoscaler"]["serviceaccount"]}"]
     }
   }
@@ -191,13 +191,13 @@ module "autoscaler_irsa_role" {
 }
 
 # Used by kubernetes/helm provider to authenticate to cluster with the AWS IAM identity (using a token)
-data "aws_eks_cluster_auth" "cijenkinsio-agents-2" {
-  name = module.cijenkinsio-agents-2.cluster_name
+data "aws_eks_cluster_auth" "cijenkinsio_agents_2" {
+  name = module.cijenkinsio_agents_2.cluster_name
 }
 
 ### Install Cluster Autoscaler
-resource "helm_release" "cluster-autoscaler" {
-  provider   = helm.cijenkinsio-agents-2
+resource "helm_release" "cluster_autoscaler" {
+  provider   = helm.cijenkinsio_agents_2
   name       = "cluster-autoscaler"
   repository = "https://kubernetes.github.io/autoscaler"
   chart      = "cluster-autoscaler"
@@ -211,24 +211,24 @@ resource "helm_release" "cluster-autoscaler" {
       region             = local.region,
       serviceAccountName = local.cijenkinsio_agents_2["autoscaler"]["serviceaccount"],
       autoscalerRoleArn  = module.autoscaler_irsa_role.iam_role_arn,
-      clusterName        = module.cijenkinsio-agents-2.cluster_name,
-      nodeSelectors      = module.cijenkinsio-agents-2.eks_managed_node_groups["tiny_ondemand_linux"].node_group_labels,
+      clusterName        = module.cijenkinsio_agents_2.cluster_name,
+      nodeSelectors      = module.cijenkinsio_agents_2.eks_managed_node_groups["tiny_ondemand_linux"].node_group_labels,
       nodeTolerations    = local.cijenkinsio_agents_2["tolerations"]["applications"],
     })
   ]
 }
 
 ### Define admin credential to be used in jenkins-infra/kubernetes-management
-module "cijenkinsio-agents-2_admin_sa" {
+module "cijenkinsio_agents_2_admin_sa" {
   providers = {
-    kubernetes = kubernetes.cijenkinsio-agents-2
+    kubernetes = kubernetes.cijenkinsio_agents_2
   }
   source                     = "./.shared-tools/terraform/modules/kubernetes-admin-sa"
-  cluster_name               = module.cijenkinsio-agents-2.cluster_name
-  cluster_hostname           = module.cijenkinsio-agents-2.cluster_endpoint
-  cluster_ca_certificate_b64 = module.cijenkinsio-agents-2.cluster_certificate_authority_data
+  cluster_name               = module.cijenkinsio_agents_2.cluster_name
+  cluster_hostname           = module.cijenkinsio_agents_2.cluster_endpoint
+  cluster_ca_certificate_b64 = module.cijenkinsio_agents_2.cluster_certificate_authority_data
 }
-output "kubeconfig_cijenkinsio-agents-2" {
+output "kubeconfig_cijenkinsio_agents_2" {
   sensitive = true
-  value     = module.cijenkinsio-agents-2_admin_sa.kubeconfig
+  value     = module.cijenkinsio_agents_2_admin_sa.kubeconfig
 }

@@ -35,20 +35,20 @@ provider "tls" {
 
 # TODO track with updatecli
 provider "kubernetes" {
-  alias = "cijenkinsio-agents-2"
+  alias = "cijenkinsio_agents_2"
 
-  host                   = module.cijenkinsio-agents-2.cluster_endpoint
-  cluster_ca_certificate = base64decode(module.cijenkinsio-agents-2.cluster_certificate_authority_data)
-  token                  = data.aws_eks_cluster_auth.cijenkinsio-agents-2.token
+  host                   = module.cijenkinsio_agents_2.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.cijenkinsio_agents_2.cluster_certificate_authority_data)
+  token                  = data.aws_eks_cluster_auth.cijenkinsio_agents_2.token
 }
 
 # TODO track with updatecli
 provider "helm" {
-  alias = "cijenkinsio-agents-2"
+  alias = "cijenkinsio_agents_2"
 
   kubernetes {
-    host                   = module.cijenkinsio-agents-2.cluster_endpoint
-    token                  = data.aws_eks_cluster_auth.cijenkinsio-agents-2.token
-    cluster_ca_certificate = base64decode(module.cijenkinsio-agents-2.cluster_certificate_authority_data)
+    host                   = module.cijenkinsio_agents_2.cluster_endpoint
+    token                  = data.aws_eks_cluster_auth.cijenkinsio_agents_2.token
+    cluster_ca_certificate = base64decode(module.cijenkinsio_agents_2.cluster_certificate_authority_data)
   }
 }
