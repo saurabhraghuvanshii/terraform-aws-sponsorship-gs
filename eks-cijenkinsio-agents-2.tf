@@ -196,7 +196,7 @@ data "aws_eks_cluster_auth" "cijenkinsio_agents_2" {
 }
 
 ### Install Cluster Autoscaler
-resource "helm_release" "cluster-autoscaler" {
+resource "helm_release" "cluster_autoscaler" {
   provider   = helm.cijenkinsio_agents_2
   name       = "cluster-autoscaler"
   repository = "https://kubernetes.github.io/autoscaler"
