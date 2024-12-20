@@ -1,5 +1,5 @@
 # Define a KMS main key to encrypt the EKS cluster
-resource "aws_kms_key" "cijenkinsio-agents-2" {
+resource "aws_kms_key" "cijenkinsio_agents_2" {
   description         = "EKS Secret Encryption Key for the cluster cijenkinsio-agents-2"
   enable_key_rotation = true
 
@@ -52,7 +52,7 @@ module "cijenkinsio-agents-2" {
 
   create_kms_key = false
   cluster_encryption_config = {
-    provider_key_arn = aws_kms_key.cijenkinsio-agents-2.arn
+    provider_key_arn = aws_kms_key.cijenkinsio_agents_2.arn
     resources        = ["secrets"]
   }
 
