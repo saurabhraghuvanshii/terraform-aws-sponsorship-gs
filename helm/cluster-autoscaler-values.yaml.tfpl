@@ -6,13 +6,7 @@ nodeSelector:
   ${label_key}: "${label_value}"
 %{ endfor ~}
 
-tolerations:
-%{ for toleration in nodeTolerations ~}
-  - key: "${toleration.key}"
-    operator: "Equal"
-    value: "${toleration.value}"
-    effect: "${ replace(title(lower(replace(toleration.effect, "_", " "))), " ", "") }"
-%{ endfor ~}
+tolerations: ${yamlencode(nodeTolerations)}
 
 extraArgs:
   balance-similar-node-groups: true

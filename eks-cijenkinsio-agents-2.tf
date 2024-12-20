@@ -23,13 +23,13 @@ module "cijenkinsio-agents-2" {
   subnet_ids = slice(module.vpc.private_subnets, 1, 3)
 
   # Required to allow EKS service accounts to authenticate to AWS API through OIDC (and assume IAM roles)
-  # useful for autoscaler, EKS addons and any AWS APi usage
+  # useful for autoscaler, EKS addons and any AWS API usage
   enable_irsa = true
 
   # Allow the terraform CI IAM user to be co-owner of the cluster
   enable_cluster_creator_admin_permissions = true
 
-  # avoid using config map to specify admin accesses (decrease attack surface)
+  # Avoid using config map to specify admin accesses (decrease attack surface)
   authentication_mode = "API"
 
   access_entries = {
@@ -65,9 +65,6 @@ module "cijenkinsio-agents-2" {
 
   create_cluster_primary_security_group_tags = false
 
-  # Do not use interpolated values from `local` in either keys and values of provided tags (or `cluster_tags)
-  # To avoid having and implicit dependency to a resource not available when parsing the module (infamous errror `Error: Invalid for_each argument`)
-  # Ref. same error as having a `depends_on` in https://github.com/terraform-aws-modules/terraform-aws-eks/issues/2337
   tags = merge(local.common_tags, {
     GithubRepo = "terraform-aws-sponsorship"
     GithubOrg  = "jenkins-infra"
@@ -75,11 +72,8 @@ module "cijenkinsio-agents-2" {
     associated_service = "eks/cijenkinsio-agents-2"
   })
 
-  # VPC is defined in vpc.tf
   vpc_id = module.vpc.vpc_id
 
-  ## Manage EKS addons with module - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eks_addon
-  # See new versions with `aws eks describe-addon-versions --kubernetes-version <k8s-version> --addon-name <addon>`
   cluster_addons = {
     coredns = {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
@@ -125,8 +119,8 @@ module "cijenkinsio-agents-2" {
   }
 
   eks_managed_node_groups = {
+    # This worker pool is expected to host the "technical" services such as cluster-autoscaler, data cluster-agent, ACP, etc.
     tiny_ondemand_linux = {
-      # This worker pool is expected to host the "technical" services such as cluster-autoscaler, data cluster-agent, ACP, etc.
       name = "tiny-ondemand-linux"
 
       instance_types = ["t4g.large"] # 2vcpu 8Gio
@@ -219,7 +213,7 @@ resource "helm_release" "cluster-autoscaler" {
       autoscalerRoleArn  = module.autoscaler_irsa_role.iam_role_arn,
       clusterName        = module.cijenkinsio-agents-2.cluster_name,
       nodeSelectors      = module.cijenkinsio-agents-2.eks_managed_node_groups["tiny_ondemand_linux"].node_group_labels,
-      nodeTolerations    = module.cijenkinsio-agents-2.eks_managed_node_groups["tiny_ondemand_linux"].node_group_taints,
+      nodeTolerations    = local.cijenkinsio_agents_2["tolerations"]["applications"],
     })
   ]
 }
