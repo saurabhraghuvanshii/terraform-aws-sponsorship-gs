@@ -17,15 +17,18 @@ locals {
       namespace      = "autoscaler",
       serviceaccount = "autoscaler",
     },
-    tolerations = {
-      applications = [
-        {
-          "effect" : "NoSchedule",
-          "key" : "${local.ci_jenkins_io["service_fqdn"]}/applications",
-          "operator" : "Equal",
-          "value" : "true"
-        },
-      ],
+    node_groups = {
+      "applications" = {
+        name = "applications"
+        tolerations = [
+          {
+            "effect" : "NoSchedule",
+            "key" : "${local.ci_jenkins_io["service_fqdn"]}/applications",
+            "operator" : "Equal",
+            "value" : "true"
+          },
+        ],
+      },
     },
   }
 

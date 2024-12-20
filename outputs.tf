@@ -16,11 +16,18 @@ resource "local_file" "jenkins_infra_data_report" {
           aws_security_group.unrestricted_out_http.name,
         ]
       },
+      "cijenkinsio-agents-2" = {
+        "cluster_endpoint" = module.cijenkinsio_agents_2.cluster_endpoint,
+        "node_groups" = {
+          "applications" = {
+            "labels"      = module.cijenkinsio_agents_2.eks_managed_node_groups["applications"].node_group_labels
+            "tolerations" = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
+          },
+        }
+
+      },
     },
-    "cijenkinsio-agents-2" = {
-      "cluster_endpoint" = module.cijenkinsio_agents_2.cluster_endpoint,
-      "tolerations"      = local.cijenkinsio_agents_2["tolerations"],
-    },
+
   })
   filename = "${path.module}/jenkins-infra-data-reports/aws-sponsorship.json"
 }
