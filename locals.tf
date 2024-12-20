@@ -1,17 +1,39 @@
 locals {
-  aws_account_id               = "326712726440"
-  region                       = "us-east-2"
-  autoscaler_account_namespace = "autoscaler"
-  autoscaler_account_name      = "cluster-autoscaler-aws-cluster-autoscaler-chart"
-  ebs_account_namespace        = "kube-system"
-  ebs_account_name             = "ebs-csi-controller-sa"
+  aws_account_id = "326712726440"
+  region         = "us-east-2"
 
   common_tags = {
     "scope"      = "terraform-managed"
     "repository" = "jenkins-infra/terraform-aws-sponsorship"
   }
 
-  ci_jenkins_io_fqdn = "aws.ci.jenkins.io"
+  ci_jenkins_io = {
+    service_fqdn       = "ci.jenkins.io"
+    controller_vm_fqdn = "aws.ci.jenkins.io"
+  }
+
+  cijenkinsio_agents_2 = {
+    autoscaler = {
+      namespace      = "autoscaler",
+      serviceaccount = "autoscaler",
+    },
+    tolerations = {
+      applications = [
+        {
+          "effect" : "NoSchedule",
+          "key" : "${local.ci_jenkins_io["service_fqdn"]}/applications",
+          "operator" : "Equal",
+          "value" : "true"
+        },
+      ],
+    },
+  }
+
+  toleration_taint_effects = {
+    "NoSchedule"       = "NO_SCHEDULE",
+    "NoExecute"        = "NO_EXECUTE",
+    "PreferNoSchedule" = "PREFER_NO_SCHEDULE",
+  }
 
   #####
   ## External and outbounds IP used by resources for network restrictions.

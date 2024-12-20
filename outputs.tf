@@ -1,6 +1,6 @@
 resource "local_file" "jenkins_infra_data_report" {
   content = jsonencode({
-    "${local.ci_jenkins_io_fqdn}" = {
+    "${local.ci_jenkins_io["controller_vm_fqdn"]}" = {
       "name_servers" = aws_route53_zone.aws_ci_jenkins_io.name_servers,
       "outbound_ips" = {
         "agents" = module.vpc.nat_public_ips,
@@ -18,7 +18,8 @@ resource "local_file" "jenkins_infra_data_report" {
       },
     },
     "cijenkinsio-agents-2" = {
-      "cluster_endpoint" = module.cijenkinsio-agents-2.cluster_endpoint
+      "cluster_endpoint" = module.cijenkinsio-agents-2.cluster_endpoint,
+      "tolerations"      = local.cijenkinsio_agents_2["tolerations"],
     },
   })
   filename = "${path.module}/jenkins-infra-data-reports/aws-sponsorship.json"
