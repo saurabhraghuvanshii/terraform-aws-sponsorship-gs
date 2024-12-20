@@ -10,30 +10,6 @@ provider "aws" {
   }
 }
 
-provider "local" {
-}
-
-# TODO track with updatecli
-provider "cloudinit" {
-  # Required by the EKS module
-}
-
-# TODO track with updatecli
-provider "null" {
-  # Required by the EKS module
-}
-
-# TODO track with updatecli
-provider "time" {
-  # Required by the EKS module
-}
-
-# TODO track with updatecli
-provider "tls" {
-  # Required by the EKS module
-}
-
-# TODO track with updatecli
 provider "kubernetes" {
   alias = "cijenkinsio_agents_2"
 
@@ -42,7 +18,6 @@ provider "kubernetes" {
   token                  = data.aws_eks_cluster_auth.cijenkinsio_agents_2.token
 }
 
-# TODO track with updatecli
 provider "helm" {
   alias = "cijenkinsio_agents_2"
 
