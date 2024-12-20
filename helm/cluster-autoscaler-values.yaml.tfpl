@@ -6,7 +6,8 @@ nodeSelector:
   ${label_key}: "${label_value}"
 %{ endfor ~}
 
-tolerations: ${yamlencode(nodeTolerations)}
+tolerations:
+${yamlencode(nodeTolerations)}
 
 extraArgs:
   balance-similar-node-groups: true
