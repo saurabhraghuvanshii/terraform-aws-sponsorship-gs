@@ -18,7 +18,7 @@ resource "local_file" "jenkins_infra_data_report" {
       },
     },
     "cijenkinsio-agents-2" = {
-      "cluster_endpoint" = module.cijenkinsio-agents-2.cluster_endpoint,
+      "cluster_endpoint" = module.cijenkinsio_agents_2.cluster_endpoint,
       "tolerations"      = local.cijenkinsio_agents_2["tolerations"],
     },
   })
