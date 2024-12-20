@@ -80,7 +80,7 @@ module "cijenkinsio_agents_2" {
       # TODO: track with updatecli
       addon_version = "v1.11.3-eksbuild.2"
       configuration_values = jsonencode({
-        "tolerations" = local.cijenkinsio_agents_2["tolerations"]["applications"],
+        "tolerations" = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
       })
     }
     # Kube-proxy on an Amazon EKS cluster has the same compatibility and skew policy as Kubernetes
@@ -96,7 +96,7 @@ module "cijenkinsio_agents_2" {
       # TODO: track with updatecli
       addon_version = "v1.19.0-eksbuild.1"
       configuration_values = jsonencode({
-        "tolerations" = local.cijenkinsio_agents_2["tolerations"]["applications"],
+        "tolerations" = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
       })
     }
     eks-pod-identity-agent = {
@@ -104,7 +104,7 @@ module "cijenkinsio_agents_2" {
       # TODO: track with updatecli
       addon_version = "v1.3.4-eksbuild.1"
       configuration_values = jsonencode({
-        "tolerations" = local.cijenkinsio_agents_2["tolerations"]["applications"],
+        "tolerations" = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
       })
     }
     ## https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/CHANGELOG.md
@@ -128,7 +128,7 @@ module "cijenkinsio_agents_2" {
       # Starting on 1.30, AL2023 is the default AMI type for EKS managed node groups
       ami_type     = "AL2023_ARM_64_STANDARD"
       min_size     = 1
-      max_size     = 3
+      max_size     = 1
       desired_size = 1
 
       subnet_ids = slice(module.vpc.private_subnets, 1, 2) # Only 1 subnet in 1 AZ (for EBS)
@@ -137,7 +137,32 @@ module "cijenkinsio_agents_2" {
         jenkins = local.ci_jenkins_io["service_fqdn"]
         role    = "applications"
       }
-      taints = { for toleration_key, toleration_value in local.cijenkinsio_agents_2["tolerations"]["applications"] :
+      taints = { for toleration_key, toleration_value in local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"] :
+        toleration_key => {
+          key    = toleration_value["key"],
+          value  = toleration_value.value
+          effect = local.toleration_taint_effects[toleration_value.effect]
+        }
+      }
+    },
+    # This worker pool is expected to host the "technical" services such as cluster-autoscaler, data cluster-agent, ACP, etc.
+    applications = {
+      name           = local.cijenkinsio_agents_2["node_groups"]["applications"]["name"]
+      instance_types = ["t4g.xlarge"]
+      capacity_type  = "ON_DEMAND"
+      # Starting on 1.30, AL2023 is the default AMI type for EKS managed node groups
+      ami_type     = "AL2023_ARM_64_STANDARD"
+      min_size     = 1
+      max_size     = 3 # Usually 2 nodes, but accept 1 additional surging node
+      desired_size = 1
+
+      subnet_ids = slice(module.vpc.private_subnets, 1, 2) # Only 1 subnet in 1 AZ (for EBS)
+
+      labels = {
+        jenkins = local.ci_jenkins_io["service_fqdn"]
+        role    = local.cijenkinsio_agents_2["node_groups"]["applications"]["name"]
+      }
+      taints = { for toleration_key, toleration_value in local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"] :
         toleration_key => {
           key    = toleration_value["key"],
           value  = toleration_value.value
@@ -212,8 +237,8 @@ resource "helm_release" "cluster_autoscaler" {
       serviceAccountName = local.cijenkinsio_agents_2["autoscaler"]["serviceaccount"],
       autoscalerRoleArn  = module.autoscaler_irsa_role.iam_role_arn,
       clusterName        = module.cijenkinsio_agents_2.cluster_name,
-      nodeSelectors      = module.cijenkinsio_agents_2.eks_managed_node_groups["tiny_ondemand_linux"].node_group_labels,
-      nodeTolerations    = local.cijenkinsio_agents_2["tolerations"]["applications"],
+      nodeSelectors      = module.cijenkinsio_agents_2.eks_managed_node_groups["applications"].node_group_labels,
+      nodeTolerations    = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
     })
   ]
 }
