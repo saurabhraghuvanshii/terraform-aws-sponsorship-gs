@@ -248,11 +248,11 @@ resource "helm_release" "cluster-autoscaler" {
   chart      = "cluster-autoscaler"
   version    = "9.43.2"
 
-  values = templatefile("./helm/cluster-autoscaler-values.yaml.tfpl", {
+  values = [templatefile("./helm/cluster-autoscaler-values.yaml.tfpl", {
     region             = local.region,
     serviceAccountName = local.autoscaler_account_name,
     autoscalerRoleArn  = module.autoscaler_irsa_role.iam_role_arn,
-  })
+  })]
 }
 
 module "cijenkinsio-agents-2_admin_sa" {
