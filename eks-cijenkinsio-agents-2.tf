@@ -86,7 +86,7 @@ module "cijenkinsio_agents_2" {
     kube-proxy = {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
       # TODO: track with updatecli
-      addon_version = "v1.29.10-eksbuild.3"
+      addon_version = "v1.29.11-eksbuild.2"
     }
     # https://github.com/aws/amazon-vpc-cni-k8s/releases
     vpc-cni = {
