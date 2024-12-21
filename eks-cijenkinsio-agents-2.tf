@@ -63,8 +63,6 @@ module "cijenkinsio_agents_2" {
   # without needing to allow their IPs
   cluster_endpoint_private_access = true
 
-  create_cluster_primary_security_group_tags = false
-
   tags = merge(local.common_tags, {
     GithubRepo = "terraform-aws-sponsorship"
     GithubOrg  = "jenkins-infra"
@@ -95,9 +93,6 @@ module "cijenkinsio_agents_2" {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
       # TODO: track with updatecli
       addon_version = "v1.19.0-eksbuild.1"
-      configuration_values = jsonencode({
-        "tolerations" = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
-      })
     }
     eks-pod-identity-agent = {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
