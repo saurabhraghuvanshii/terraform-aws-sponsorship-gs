@@ -98,9 +98,6 @@ module "cijenkinsio_agents_2" {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
       # TODO: track with updatecli
       addon_version = "v1.3.4-eksbuild.1"
-      configuration_values = jsonencode({
-        "tolerations" = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
-      })
     }
     ## https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/CHANGELOG.md
     # aws-ebs-csi-driver = {
@@ -121,7 +118,7 @@ module "cijenkinsio_agents_2" {
       capacity_type  = "ON_DEMAND"
       # Starting on 1.30, AL2023 is the default AMI type for EKS managed node groups
       ami_type     = "AL2023_ARM_64_STANDARD"
-      min_size     = 1
+      min_size     = 2
       max_size     = 3 # Usually 2 nodes, but accept 1 additional surging node
       desired_size = 2
 
@@ -189,7 +186,7 @@ data "aws_eks_cluster_auth" "cijenkinsio_agents_2" {
   name = module.cijenkinsio_agents_2.cluster_name
 }
 
-### Install Cluster Autoscaler
+## Install Cluster Autoscaler
 resource "helm_release" "cluster_autoscaler" {
   provider   = helm.cijenkinsio_agents_2
   name       = "cluster-autoscaler"
