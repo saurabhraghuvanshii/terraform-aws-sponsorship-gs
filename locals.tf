@@ -84,7 +84,7 @@ locals {
     },
     {
       name = "eks-public-1",
-      az   = format("${local.region}%s", "b"),
+      az   = format("${local.region}%s", "a"),
       # First /23 of the first subset of the VPC (split in 2)
       cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[0], 6, 1)
     },
@@ -99,7 +99,7 @@ locals {
     },
     {
       name = "eks-1",
-      az   = format("${local.region}%s", "b"),
+      az   = format("${local.region}%s", "a"),
       # Second /23 of the second subset of the VPC (split in 2)
       cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[1], 6, 1)
     },
