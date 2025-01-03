@@ -123,10 +123,12 @@ module "cijenkinsio_agents_2" {
       instance_types = ["t4g.xlarge"]
       capacity_type  = "ON_DEMAND"
       # Starting on 1.30, AL2023 is the default AMI type for EKS managed node groups
-      ami_type     = "AL2023_ARM_64_STANDARD"
-      min_size     = 2
-      max_size     = 3 # Usually 2 nodes, but accept 1 additional surging node
-      desired_size = 2
+      ami_type = "AL2023_ARM_64_STANDARD"
+      # TODO: track with updatecli
+      ami_release_version = "1.29.10-20241213"
+      min_size            = 2
+      max_size            = 3 # Usually 2 nodes, but accept 1 additional surging node
+      desired_size        = 2
 
       subnet_ids = slice(module.vpc.private_subnets, 1, 2) # Only 1 subnet in 1 AZ (for EBS)
 
