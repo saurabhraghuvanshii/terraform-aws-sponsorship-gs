@@ -123,10 +123,12 @@ module "cijenkinsio_agents_2" {
       instance_types = ["t4g.xlarge"]
       capacity_type  = "ON_DEMAND"
       # Starting on 1.30, AL2023 is the default AMI type for EKS managed node groups
-      ami_type     = "AL2023_ARM_64_STANDARD"
-      min_size     = 2
-      max_size     = 3 # Usually 2 nodes, but accept 1 additional surging node
-      desired_size = 2
+      ami_type = "AL2023_ARM_64_STANDARD"
+      # TODO: track with updatecli
+      ami_release_version = "1.29.10-20241213"
+      min_size            = 2
+      max_size            = 3 # Usually 2 nodes, but accept 1 additional surging node
+      desired_size        = 2
 
       subnet_ids = slice(module.vpc.private_subnets, 1, 2) # Only 1 subnet in 1 AZ (for EBS)
 
@@ -167,7 +169,11 @@ module "cijenkinsio_agents_2" {
   }
 }
 
-module "autoscaler_irsa_role" {
+moved {
+  from = module.autoscaler_irsa_role
+  to   = module.cijenkinsio_agents_2_autoscaler_irsa_role
+}
+module "cijenkinsio_agents_2_autoscaler_irsa_role" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   # TODO track with updatecli
   version = "5.48.0"
@@ -217,7 +223,7 @@ resource "kubernetes_storage_class" "cijenkinsio_agents_2_ebs_csi_premium_retain
     name = "ebs-csi-premium-retain-${each.key}"
   }
   storage_provisioner = "ebs.csi.aws.com"
-  # reclaim_policy      = "Retain"
+  reclaim_policy      = "Retain"
   parameters = {
     "csi.storage.k8s.io/fstype" = "xfs"
     "type"                      = "gp3"
@@ -238,7 +244,11 @@ data "aws_eks_cluster_auth" "cijenkinsio_agents_2" {
 }
 
 ## Install Cluster Autoscaler
-resource "helm_release" "cluster_autoscaler" {
+moved {
+  from = helm_release.cluster_autoscaler
+  to   = helm_release.cijenkinsio_agents_2_cluster_autoscaler
+}
+resource "helm_release" "cijenkinsio_agents_2_cluster_autoscaler" {
   provider   = helm.cijenkinsio_agents_2
   name       = "cluster-autoscaler"
   repository = "https://kubernetes.github.io/autoscaler"
@@ -252,7 +262,7 @@ resource "helm_release" "cluster_autoscaler" {
     templatefile("./helm/cluster-autoscaler-values.yaml.tfpl", {
       region             = local.region,
       serviceAccountName = local.cijenkinsio_agents_2["autoscaler"]["serviceaccount"],
-      autoscalerRoleArn  = module.autoscaler_irsa_role.iam_role_arn,
+      autoscalerRoleArn  = module.cijenkinsio_agents_2_autoscaler_irsa_role.iam_role_arn,
       clusterName        = module.cijenkinsio_agents_2.cluster_name,
       nodeSelectors      = module.cijenkinsio_agents_2.eks_managed_node_groups["applications"].node_group_labels,
       nodeTolerations    = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
