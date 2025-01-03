@@ -221,7 +221,7 @@ resource "kubernetes_storage_class" "cijenkinsio_agents_2_ebs_csi_premium_retain
     name = "ebs-csi-premium-retain-${each.key}"
   }
   storage_provisioner = "ebs.csi.aws.com"
-  # reclaim_policy      = "Retain"
+  reclaim_policy      = "Retain"
   parameters = {
     "csi.storage.k8s.io/fstype" = "xfs"
     "type"                      = "gp3"
