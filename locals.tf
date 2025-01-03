@@ -17,6 +17,10 @@ locals {
       namespace      = "autoscaler",
       serviceaccount = "autoscaler",
     },
+    ebs-csi = {
+      namespace      = "kube-system",
+      serviceaccount = "ebs-csi-controller-sa",
+    },
     node_groups = {
       "applications" = {
         name = "applications"
@@ -30,6 +34,7 @@ locals {
         ],
       },
     },
+    subnets = ["eks-1", "eks-2"]
   }
 
   toleration_taint_effects = {

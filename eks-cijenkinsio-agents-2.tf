@@ -100,14 +100,20 @@ module "cijenkinsio_agents_2" {
       addon_version = "v1.3.4-eksbuild.1"
     }
     ## https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/CHANGELOG.md
-    # aws-ebs-csi-driver = {
-    #   # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
-    #   addon_version = "v1.37.0-eksbuild.1"
-    #   # TODO specify service account
-    #   # service_account_role_arn = module.cijenkinsio_agents_2_irsa_ebs.iam_role_arn
-    # }
-    # locals: ebs_account_namespace = "kube-system"
-    # locals: ebs_account_name      = "ebs-csi-controller-sa"
+    aws-ebs-csi-driver = {
+      # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
+      # TODO: track with updatecli
+      addon_version = "v1.38.1-eksbuild.1"
+      configuration_values = jsonencode({
+        "controller" = {
+          "tolerations" = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
+        },
+        "node" = {
+          "tolerations" = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
+        },
+      })
+      service_account_role_arn = module.cijenkinsio_agents_2_ebscsi_irsa_role.iam_role_arn
+    }
   }
 
   eks_managed_node_groups = {
@@ -179,6 +185,51 @@ module "autoscaler_irsa_role" {
   }
 
   tags = local.common_tags
+}
+
+module "cijenkinsio_agents_2_ebscsi_irsa_role" {
+  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  # TODO track with updatecli
+  version = "5.52.1"
+
+  role_name             = "${module.cijenkinsio_agents_2.cluster_name}-ebs-csi"
+  attach_ebs_csi_policy = true
+  # Pass ARNs instead of IDs: https://github.com/terraform-aws-modules/terraform-aws-iam/issues/372
+  ebs_csi_kms_cmk_ids = [aws_kms_key.cijenkinsio_agents_2.arn]
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.cijenkinsio_agents_2.oidc_provider_arn
+      namespace_service_accounts = ["${local.cijenkinsio_agents_2["ebs-csi"]["namespace"]}:${local.cijenkinsio_agents_2["ebs-csi"]["serviceaccount"]}"]
+    }
+  }
+
+  tags = local.common_tags
+}
+
+# From https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/examples/kubernetes/storageclass/manifests/storageclass.yaml
+resource "kubernetes_storage_class" "cijenkinsio_agents_2_ebs_csi_premium_retain" {
+  provider = kubernetes.cijenkinsio_agents_2
+  # We want one class per Availability Zone
+  for_each = toset([for private_subnet in local.vpc_private_subnets : private_subnet.az if startswith(private_subnet.name, "eks")])
+
+  metadata {
+    name = "ebs-csi-premium-retain-${each.key}"
+  }
+  storage_provisioner = "ebs.csi.aws.com"
+  # reclaim_policy      = "Retain"
+  parameters = {
+    "csi.storage.k8s.io/fstype" = "xfs"
+    "type"                      = "gp3"
+  }
+  allowed_topologies {
+    match_label_expressions {
+      key    = "topology.kubernetes.io/zone"
+      values = [each.key]
+    }
+  }
+  allow_volume_expansion = true
+  volume_binding_mode    = "WaitForFirstConsumer"
 }
 
 # Used by kubernetes/helm provider to authenticate to cluster with the AWS IAM identity (using a token)
