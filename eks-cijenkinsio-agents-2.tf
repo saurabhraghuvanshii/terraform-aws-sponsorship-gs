@@ -47,13 +47,11 @@ module "cijenkinsio_agents_2" {
           }
         }
       }
-    }
-
-    # see https://docs.aws.amazon.com/eks/latest/userguide/creating-access-entries.html
+    },
     ci_jenkins_io = {
       principal_arn =  aws_iam_instance_profile.ci_jenkins_io.arn
       type          = "STANDARD"
-      kubernetes_groups = local.cijenkinsio_agents_2.kubernetes_groups  # Create Kubernetes RoleBinding or ClusterRoleBinding objects on your cluster that specify the group name as a subject for kind: Group
+      kubernetes_groups = local.cijenkinsio_agents_2.kubernetes_groups
     }
   }
 
