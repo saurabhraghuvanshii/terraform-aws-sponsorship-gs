@@ -18,6 +18,7 @@ resource "local_file" "jenkins_infra_data_report" {
       },
       "cijenkinsio-agents-2" = {
         "cluster_endpoint" = module.cijenkinsio_agents_2.cluster_endpoint,
+        "kubernetes_groups" = local.cijenkinsio_agents_2.kubernetes_groups,
         "node_groups" = {
           "applications" = {
             "labels"      = module.cijenkinsio_agents_2.eks_managed_node_groups["applications"].node_group_labels

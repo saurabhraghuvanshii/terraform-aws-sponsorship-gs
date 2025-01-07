@@ -21,6 +21,7 @@ locals {
       namespace      = "kube-system",
       serviceaccount = "ebs-csi-controller-sa",
     },
+    kubernetes_groups = ["ci-jenkins-io"],
     node_groups = {
       "applications" = {
         name = "applications"
