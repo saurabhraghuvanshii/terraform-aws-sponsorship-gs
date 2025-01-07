@@ -49,7 +49,7 @@ module "cijenkinsio_agents_2" {
       }
     },
     ci_jenkins_io = {
-      principal_arn =  aws_iam_instance_profile.ci_jenkins_io.arn
+      principal_arn =  aws_iam_role.ci_jenkins_io.arn
       type          = "STANDARD"
       kubernetes_groups = local.cijenkinsio_agents_2.kubernetes_groups
     }
