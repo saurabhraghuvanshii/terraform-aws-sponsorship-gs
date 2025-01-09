@@ -1,0 +1,120 @@
+name: Bump EKS Addons versions in eks-cijenkinsio-agents-2.tf
+
+scms:
+  default:
+    kind: github
+    spec:
+      user: "{{ .github.user }}"
+      email: "{{ .github.email }}"
+      owner: "{{ .github.owner }}"
+      repository: "{{ .github.repository }}"
+      token: "{{ requiredEnv .github.token }}"
+      username: "{{ .github.username }}"
+      branch: "{{ .github.branch }}"
+
+sources:
+  getLatestKubeProxyVersion:
+    kind: shell
+    name: Retrieve the latest version of kube-proxy for Kubernetes 1.29
+    spec:
+      command: |
+        aws eks describe-addon-versions \
+          --kubernetes-version 1.29 \
+          --addon-name kube-proxy \
+          --query 'addons[0].addonVersions[0].addonVersion' \
+          --output text
+
+  getLatestVpcCniVersion:
+    kind: shell
+    name: Retrieve the latest version of vpc-cni for Kubernetes 1.29
+    spec:
+      command: |
+        aws eks describe-addon-versions \
+          --kubernetes-version 1.29 \
+          --addon-name vpc-cni \
+          --query 'addons[0].addonVersions[0].addonVersion' \
+          --output text
+
+  getLatestEksPodIdentityAgentVersion:
+    kind: shell
+    name: Retrieve the latest version of eks-pod-identity-agent for Kubernetes 1.29
+    spec:
+      command: |
+        aws eks describe-addon-versions \
+          --kubernetes-version 1.29 \
+          --addon-name eks-pod-identity-agent \
+          --query 'addons[0].addonVersions[0].addonVersion' \
+          --output text
+
+  getLatestAwsEbsCsiDriverVersion:
+    kind: shell
+    name: Retrieve the latest version of aws-ebs-csi-driver for Kubernetes 1.29
+    spec:
+      command: |
+        aws eks describe-addon-versions \
+          --kubernetes-version 1.29 \
+          --addon-name aws-ebs-csi-driver \
+          --query 'addons[0].addonVersions[0].addonVersion' \
+          --output text
+
+  getLatestCoreDnsVersion:
+    kind: shell
+    name: Retrieve the latest version of coredns for Kubernetes 1.29
+    spec:
+      command: |
+        aws eks describe-addon-versions \
+          --kubernetes-version 1.29 \
+          --addon-name coredns \
+          --query 'addons[0].addonVersions[0].addonVersion' \
+          --output text
+
+targets:
+  upgradeKubeProxyVersion:
+    name: Update the kube-proxy addon version in eks-cijenkinsio-agents-2.tf
+    kind: hcl
+    sourceid: getLatestKubeProxyVersion
+    spec:
+      file: eks-cijenkinsio-agents-2.tf
+      path: module.cijenkinsio_agents_2.cluster_addons.kube-proxy.addon_version
+
+  upgradeVpcCniVersion:
+    name: Update the vpc-cni addon version in eks-cijenkinsio-agents-2.tf
+    kind: hcl
+    sourceid: getLatestVpcCniVersion
+    spec:
+      file: eks-cijenkinsio-agents-2.tf
+      path: module.cijenkinsio_agents_2.cluster_addons.vpc-cni.addon_version
+
+  upgradeEksPodIdentityAgentVersion:
+    name: Update the eks-pod-identity-agent addon version in eks-cijenkinsio-agents-2.tf
+    kind: hcl
+    sourceid: getLatestEksPodIdentityAgentVersion
+    spec:
+      file: eks-cijenkinsio-agents-2.tf
+      path: module.cijenkinsio_agents_2.cluster_addons.eks-pod-identity-agent.addon_version
+
+  upgradeAwsEbsCsiDriverVersion:
+    name: Update the aws-ebs-csi-driver addon version in eks-cijenkinsio-agents-2.tf
+    kind: hcl
+    sourceid: getLatestAwsEbsCsiDriverVersion
+    spec:
+      file: eks-cijenkinsio-agents-2.tf
+      path: module.cijenkinsio_agents_2.cluster_addons.aws-ebs-csi-driver.addon_version
+
+  upgradeCoreDnsVersion:
+    name: Update the coredns addon version in eks-cijenkinsio-agents-2.tf
+    kind: hcl
+    sourceid: getLatestCoreDnsVersion
+    spec:
+      file: eks-cijenkinsio-agents-2.tf
+      path: module.cijenkinsio_agents_2.cluster_addons.coredns.addon_version
+
+actions:
+  default:
+    kind: github/pullrequest
+    scmid: default
+    title: Bump EKS Addons versions to latest for Kubernetes 1.29
+    spec:
+      labels:
+        - dependencies
+        - eks-addons
