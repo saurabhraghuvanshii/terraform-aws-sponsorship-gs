@@ -20,6 +20,7 @@ sources:
       command: |
         aws eks describe-addon-versions \
           --kubernetes-version 1.29 \
+          --region us-east-2 \
           --addon-name kube-proxy \
           --query 'addons[0].addonVersions[0].addonVersion' \
           --output text
@@ -31,6 +32,7 @@ sources:
       command: |
         aws eks describe-addon-versions \
           --kubernetes-version 1.29 \
+          --region us-east-2 \
           --addon-name vpc-cni \
           --query 'addons[0].addonVersions[0].addonVersion' \
           --output text
@@ -42,6 +44,7 @@ sources:
       command: |
         aws eks describe-addon-versions \
           --kubernetes-version 1.29 \
+          --region us-east-2 \
           --addon-name eks-pod-identity-agent \
           --query 'addons[0].addonVersions[0].addonVersion' \
           --output text
@@ -53,6 +56,7 @@ sources:
       command: |
         aws eks describe-addon-versions \
           --kubernetes-version 1.29 \
+          --region us-east-2 \
           --addon-name aws-ebs-csi-driver \
           --query 'addons[0].addonVersions[0].addonVersion' \
           --output text
@@ -64,6 +68,7 @@ sources:
       command: |
         aws eks describe-addon-versions \
           --kubernetes-version 1.29 \
+          --region us-east-2 \
           --addon-name coredns \
           --query 'addons[0].addonVersions[0].addonVersion' \
           --output text
