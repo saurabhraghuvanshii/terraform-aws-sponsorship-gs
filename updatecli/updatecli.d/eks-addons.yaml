@@ -24,6 +24,11 @@ sources:
           --addon-name kube-proxy \
           --query 'addons[0].addonVersions[0].addonVersion' \
           --output text
+    environments:
+        - name: PATH
+        - name: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+        - name: AWS_DEFAULT_PROFILE
 
   getLatestVpcCniVersion:
     kind: shell
