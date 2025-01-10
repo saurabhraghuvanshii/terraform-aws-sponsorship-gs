@@ -21,17 +21,14 @@ sources:
         aws eks describe-addon-versions \
           --kubernetes-version 1.29 \
           --region us-east-2 \
+          --profile terraform-developer \
           --addon-name kube-proxy \
           --query 'addons[0].addonVersions[0].addonVersion' \
           --output text
     environments:
         - name: PATH
-        - name: AWS_PROFILE
-          value: "{{ .aws_profile }}"
         - name: AWS_ACCESS_KEY_ID
-          value: "{{ .aws_access_key_id }}"
         - name: AWS_SECRET_ACCESS_KEY
-          value: "{{ .aws_secret_access_key }}"
 
   getLatestVpcCniVersion:
     kind: shell
