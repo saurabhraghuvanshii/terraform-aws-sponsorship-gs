@@ -21,15 +21,15 @@ sources:
         aws eks describe-addon-versions \
           --kubernetes-version 1.29 \
           --region us-east-2 \
-          --profile ${AWS_DEFAULT_PROFILE} \
+          --profile "${AWS_DEFAULT_PROFILE}" \
           --addon-name kube-proxy \
           --query 'addons[0].addonVersions[0].addonVersion' \
           --output text
-    environments:
-        - name: PATH
-        - name: AWS_ACCESS_KEY_ID
-        - name: AWS_SECRET_ACCESS_KEY
-        - name: AWS_DEFAULT_PROFILE
+      environments:
+          - name: PATH
+          - name: AWS_ACCESS_KEY_ID
+          - name: AWS_SECRET_ACCESS_KEY
+          - name: AWS_DEFAULT_PROFILE
 
   getLatestVpcCniVersion:
     kind: shell
