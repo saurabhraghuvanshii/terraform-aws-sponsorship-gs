@@ -26,12 +26,12 @@ sources:
           --output text
     environments:
         - name: PATH
-      - name: AWS_PROFILE
-        value: "{{ .aws_profile }}"
-      - name: AWS_ACCESS_KEY_ID
-        value: "{{ .aws_access_key_id }}"
-      - name: AWS_SECRET_ACCESS_KEY
-        value: "{{ .aws_secret_access_key }}"
+        - name: AWS_PROFILE
+          value: "{{ .aws_profile }}"
+        - name: AWS_ACCESS_KEY_ID
+          value: "{{ .aws_access_key_id }}"
+        - name: AWS_SECRET_ACCESS_KEY
+          value: "{{ .aws_secret_access_key }}"
 
   getLatestVpcCniVersion:
     kind: shell
