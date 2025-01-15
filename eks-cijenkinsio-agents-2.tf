@@ -172,6 +172,18 @@ module "cijenkinsio_agents_2" {
       ipv6_cidr_blocks = ["::/0"]
     },
   }
+
+  # Allow ingress from ci.jenkins.io VM
+  cluster_security_group_additional_rules = {
+    ingress_https_cijio = {
+      description = "Allow ingress from ci.jenkins.io in https"
+      protocol    = "TCP"
+      from_port   = 443
+      to_port     = 443
+      type        = "ingress"
+      cidr_blocks = ["${aws_instance.ci_jenkins_io.private_ip}/32"]
+    },
+  }
 }
 
 module "cijenkinsio_agents_2_autoscaler_irsa_role" {
