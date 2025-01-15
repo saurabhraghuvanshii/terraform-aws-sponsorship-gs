@@ -130,6 +130,13 @@ resource "aws_instance" "ci_jenkins_io" {
   )
 }
 
+## SSH Key used to access EC2 Agents (private key stored encrypted in SOPS)
+resource "aws_key_pair" "deployer" {
+  key_name   = "deployer-key"
+  public_key = trimspace(element(split("#", compact(split("\n", file("./ec2_agents_authorized_keys")))[0]), 0))
+  tags       = local.common_tags
+}
+
 ### DNS Zone delegated from Azure DNS (jenkins-infra/azure-net)
 # `updatecli` maintains sync between the 2 repositories using the infra reports (see outputs.tf)
 resource "aws_route53_zone" "aws_ci_jenkins_io" {
