@@ -42,19 +42,10 @@ targets:
     scmid: default
 
 actions:
-  upgradeAutoscalerModuleVersion:
+  upgradeAwsIamModuleVersion:
     kind: github/pullrequest
     scmid: default
-    title: Bump version of the AWS Terraform module "cijenkinsio_agents_2_autoscaler_irsa_role" to {{ source "getLatestVersion" }}
-    spec:
-      labels:
-        - dependencies
-        - terraform-aws-iam-role-module
-
-  upgradeEbsCsiModuleVersion:
-    kind: github/pullrequest
-    scmid: default
-    title: Bump version of the AWS Terraform module "cijenkinsio_agents_2_ebscsi_irsa_role" to {{ source "getLatestVersion" }}
+    title: Bump version of the AWS Terraform module "cijenkinsio_agents_2_autoscaler_irsa_role" and "cijenkinsio_agents_2_ebscsi_irsa_role" to {{ source "getLatestVersion" }}
     spec:
       labels:
         - dependencies
