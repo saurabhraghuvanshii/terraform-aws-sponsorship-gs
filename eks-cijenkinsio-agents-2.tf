@@ -175,7 +175,7 @@ module "cijenkinsio_agents_2" {
 }
 
 module "cijenkinsio_agents_2_autoscaler_irsa_role" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "5.52.2"
 
   role_name                        = "${module.cijenkinsio_agents_2.cluster_name}-cluster-autoscaler"
@@ -194,7 +194,7 @@ module "cijenkinsio_agents_2_autoscaler_irsa_role" {
 }
 
 module "cijenkinsio_agents_2_ebscsi_irsa_role" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "5.52.2"
 
   role_name             = "${module.cijenkinsio_agents_2.cluster_name}-ebs-csi"
