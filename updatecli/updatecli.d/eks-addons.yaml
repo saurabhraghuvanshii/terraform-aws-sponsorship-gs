@@ -100,7 +100,7 @@ targets:
     sourceid: getLatestKubeProxyVersion
     spec:
       file: eks-cijenkinsio-agents-2.tf
-      path: module.cijenkinsio_agents_2.cluster_addons.kube-proxy.addon_version
+      path: cluster_addons.kube-proxy.addon_version
 
   upgradeVpcCniVersion:
     name: Update the vpc-cni addon version in eks-cijenkinsio-agents-2.tf
