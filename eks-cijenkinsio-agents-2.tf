@@ -174,13 +174,8 @@ module "cijenkinsio_agents_2" {
   }
 }
 
-moved {
-  from = module.autoscaler_irsa_role
-  to   = module.cijenkinsio_agents_2_autoscaler_irsa_role
-}
 module "cijenkinsio_agents_2_autoscaler_irsa_role" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  # TODO track with updatecli
   version = "5.52.2"
 
   role_name                        = "${module.cijenkinsio_agents_2.cluster_name}-cluster-autoscaler"
@@ -200,7 +195,6 @@ module "cijenkinsio_agents_2_autoscaler_irsa_role" {
 
 module "cijenkinsio_agents_2_ebscsi_irsa_role" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  # TODO track with updatecli
   version = "5.52.2"
 
   role_name             = "${module.cijenkinsio_agents_2.cluster_name}-ebs-csi"
@@ -249,10 +243,6 @@ data "aws_eks_cluster_auth" "cijenkinsio_agents_2" {
 }
 
 ## Install Cluster Autoscaler
-moved {
-  from = helm_release.cluster_autoscaler
-  to   = helm_release.cijenkinsio_agents_2_cluster_autoscaler
-}
 resource "helm_release" "cijenkinsio_agents_2_cluster_autoscaler" {
   provider   = helm.cijenkinsio_agents_2
   name       = "cluster-autoscaler"
