@@ -201,7 +201,7 @@ module "cijenkinsio_agents_2_autoscaler_irsa_role" {
 module "cijenkinsio_agents_2_ebscsi_irsa_role" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   # TODO track with updatecli
-  version = "5.52.1"
+  version = "5.52.2"
 
   role_name             = "${module.cijenkinsio_agents_2.cluster_name}-ebs-csi"
   attach_ebs_csi_policy = true
