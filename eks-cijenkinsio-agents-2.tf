@@ -49,8 +49,8 @@ module "cijenkinsio_agents_2" {
       }
     },
     ci_jenkins_io = {
-      principal_arn =  aws_iam_role.ci_jenkins_io.arn
-      type          = "STANDARD"
+      principal_arn     = aws_iam_role.ci_jenkins_io.arn
+      type              = "STANDARD"
       kubernetes_groups = local.cijenkinsio_agents_2.kubernetes_groups
     }
   }
@@ -181,7 +181,7 @@ moved {
 module "cijenkinsio_agents_2_autoscaler_irsa_role" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   # TODO track with updatecli
-  version = "5.48.0"
+  version = "5.52.2"
 
   role_name                        = "${module.cijenkinsio_agents_2.cluster_name}-cluster-autoscaler"
   attach_cluster_autoscaler_policy = true
