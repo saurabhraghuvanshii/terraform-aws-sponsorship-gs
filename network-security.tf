@@ -1,283 +1,283 @@
 ####################################################################################
-# Network security resources (Netowrk ACL and Security Groups)
+# Network security resources (Network ACL and Security Groups)
 ####################################################################################
 
 ### Network ACLs
-resource "aws_network_acl" "ci_jenkins_io_controller" {
-  # Do NOT use the "default_vpc_id" module output ;)
-  vpc_id     = module.vpc.vpc_id
-  subnet_ids = [module.vpc.public_subnets[0]]
+# resource "aws_network_acl" "ci_jenkins_io_controller" {
+#   # Do NOT use the "default_vpc_id" module output ;)
+#   vpc_id     = module.vpc.vpc_id
+#   subnet_ids = [module.vpc.public_subnets[0]]
 
-  ## Get started with https://docs.aws.amazon.com/vpc/latest/userguide/custom-network-acl.html
+#   ## Get started with https://docs.aws.amazon.com/vpc/latest/userguide/custom-network-acl.html
 
-  # Allow inbound HTTP from Internet
-  ingress {
-    protocol   = "tcp"
-    rule_no    = 100
-    action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    from_port  = 80
-    to_port    = 80
-  }
-  ingress {
-    protocol        = "tcp"
-    rule_no         = 105
-    action          = "allow"
-    ipv6_cidr_block = "::/0"
-    from_port       = 80
-    to_port         = 80
-  }
+#   # Allow inbound HTTP from Internet
+#   ingress {
+#     protocol   = "tcp"
+#     rule_no    = 100
+#     action     = "allow"
+#     cidr_block = "0.0.0.0/0"
+#     from_port  = 80
+#     to_port    = 80
+#   }
+#   ingress {
+#     protocol        = "tcp"
+#     rule_no         = 105
+#     action          = "allow"
+#     ipv6_cidr_block = "::/0"
+#     from_port       = 80
+#     to_port         = 80
+#   }
 
-  # Allow inbound HTTPS from Internet
-  ingress {
-    protocol   = "tcp"
-    rule_no    = 110
-    action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    from_port  = 443
-    to_port    = 443
-  }
-  ingress {
-    protocol        = "tcp"
-    rule_no         = 115
-    action          = "allow"
-    ipv6_cidr_block = "::/0"
-    from_port       = 443
-    to_port         = 443
-  }
+#   # Allow inbound HTTPS from Internet
+#   ingress {
+#     protocol   = "tcp"
+#     rule_no    = 110
+#     action     = "allow"
+#     cidr_block = "0.0.0.0/0"
+#     from_port  = 443
+#     to_port    = 443
+#   }
+#   ingress {
+#     protocol        = "tcp"
+#     rule_no         = 115
+#     action          = "allow"
+#     ipv6_cidr_block = "::/0"
+#     from_port       = 443
+#     to_port         = 443
+#   }
 
-  # Allow inbound SSH (IPv4 only) from trusted IPs only
-  dynamic "ingress" {
-    for_each = toset(local.ssh_admin_ips)
-    content {
-      protocol   = "tcp"
-      rule_no    = sum([120, index(local.ssh_admin_ips, ingress.value)])
-      action     = "allow"
-      cidr_block = "${ingress.value}/32"
-      from_port  = 22
-      to_port    = 22
-    }
-  }
+#   # Allow inbound SSH (IPv4 only) from trusted IPs only
+#   dynamic "ingress" {
+#     for_each = toset(local.ssh_admin_ips)
+#     content {
+#       protocol   = "tcp"
+#       rule_no    = sum([120, index(local.ssh_admin_ips, ingress.value)])
+#       action     = "allow"
+#       cidr_block = "${ingress.value}/32"
+#       from_port  = 22
+#       to_port    = 22
+#     }
+#   }
 
-  # Ephemeral ports for incoming responses to HTTP outbound requests
-  ingress {
-    protocol   = "tcp"
-    rule_no    = 140
-    action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    #  A NAT gateway uses ports 1024–65535
-    from_port = 1024
-    to_port   = 65535
-  }
-  ingress {
-    protocol        = "tcp"
-    rule_no         = 145
-    action          = "allow"
-    ipv6_cidr_block = "::/0"
-    #  A NAT gateway uses ports 1024–65535
-    from_port = 1024
-    to_port   = 65535
-  }
+#   # Ephemeral ports for incoming responses to HTTP outbound requests
+#   ingress {
+#     protocol   = "tcp"
+#     rule_no    = 140
+#     action     = "allow"
+#     cidr_block = "0.0.0.0/0"
+#     #  A NAT gateway uses ports 1024–65535
+#     from_port = 1024
+#     to_port   = 65535
+#   }
+#   ingress {
+#     protocol        = "tcp"
+#     rule_no         = 145
+#     action          = "allow"
+#     ipv6_cidr_block = "::/0"
+#     #  A NAT gateway uses ports 1024–65535
+#     from_port = 1024
+#     to_port   = 65535
+#   }
 
-  # Allow inbound TCP Jenkins Agent JNLP protocol from private subnets only
-  dynamic "ingress" {
-    for_each = toset(module.vpc.private_subnets_cidr_blocks)
-    content {
-      protocol   = "tcp"
-      rule_no    = sum([150, index(module.vpc.private_subnets_cidr_blocks, ingress.value)])
-      action     = "allow"
-      cidr_block = ingress.value
-      from_port  = 50000
-      to_port    = 50000
-    }
-  }
+#   # Allow inbound TCP Jenkins Agent JNLP protocol from private subnets only
+#   dynamic "ingress" {
+#     for_each = toset(module.vpc.private_subnets_cidr_blocks)
+#     content {
+#       protocol   = "tcp"
+#       rule_no    = sum([150, index(module.vpc.private_subnets_cidr_blocks, ingress.value)])
+#       action     = "allow"
+#       cidr_block = ingress.value
+#       from_port  = 50000
+#       to_port    = 50000
+#     }
+#   }
 
-  # Allow outbound HTTP
-  egress {
-    protocol   = "tcp"
-    rule_no    = 100
-    action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    from_port  = 80
-    to_port    = 80
-  }
-  egress {
-    protocol        = "tcp"
-    rule_no         = 105
-    action          = "allow"
-    ipv6_cidr_block = "::/0"
-    from_port       = 80
-    to_port         = 80
-  }
+#   # Allow outbound HTTP
+#   egress {
+#     protocol   = "tcp"
+#     rule_no    = 100
+#     action     = "allow"
+#     cidr_block = "0.0.0.0/0"
+#     from_port  = 80
+#     to_port    = 80
+#   }
+#   egress {
+#     protocol        = "tcp"
+#     rule_no         = 105
+#     action          = "allow"
+#     ipv6_cidr_block = "::/0"
+#     from_port       = 80
+#     to_port         = 80
+#   }
 
-  # Allow outbound HTTPS
-  egress {
-    protocol   = "tcp"
-    rule_no    = 110
-    action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    from_port  = 443
-    to_port    = 443
-  }
-  egress {
-    protocol        = "tcp"
-    rule_no         = 115
-    action          = "allow"
-    ipv6_cidr_block = "::/0"
-    from_port       = 443
-    to_port         = 443
-  }
+#   # Allow outbound HTTPS
+#   egress {
+#     protocol   = "tcp"
+#     rule_no    = 110
+#     action     = "allow"
+#     cidr_block = "0.0.0.0/0"
+#     from_port  = 443
+#     to_port    = 443
+#   }
+#   egress {
+#     protocol        = "tcp"
+#     rule_no         = 115
+#     action          = "allow"
+#     ipv6_cidr_block = "::/0"
+#     from_port       = 443
+#     to_port         = 443
+#   }
 
-  # Allow outbound HKP (OpenPGP KeyServer) - https://github.com/jenkins-infra/helpdesk/issues/3664
-  egress {
-    protocol   = "tcp"
-    rule_no    = 120
-    action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    from_port  = 11371
-    to_port    = 11371
-  }
-  egress {
-    protocol        = "tcp"
-    rule_no         = 125
-    action          = "allow"
-    ipv6_cidr_block = "::/0"
-    from_port       = 11371
-    to_port         = 11371
-  }
+#   # Allow outbound HKP (OpenPGP KeyServer) - https://github.com/jenkins-infra/helpdesk/issues/3664
+#   egress {
+#     protocol   = "tcp"
+#     rule_no    = 120
+#     action     = "allow"
+#     cidr_block = "0.0.0.0/0"
+#     from_port  = 11371
+#     to_port    = 11371
+#   }
+#   egress {
+#     protocol        = "tcp"
+#     rule_no         = 125
+#     action          = "allow"
+#     ipv6_cidr_block = "::/0"
+#     from_port       = 11371
+#     to_port         = 11371
+#   }
 
-  # Ephemeral ports in response to HTTP inbound requests
-  egress {
-    protocol   = "tcp"
-    rule_no    = 140
-    action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    from_port  = 32768
-    to_port    = 65535
-  }
-  egress {
-    protocol        = "tcp"
-    rule_no         = 145
-    action          = "allow"
-    ipv6_cidr_block = "::/0"
-    from_port       = 32768
-    to_port         = 65535
-  }
+#   # Ephemeral ports in response to HTTP inbound requests
+#   egress {
+#     protocol   = "tcp"
+#     rule_no    = 140
+#     action     = "allow"
+#     cidr_block = "0.0.0.0/0"
+#     from_port  = 32768
+#     to_port    = 65535
+#   }
+#   egress {
+#     protocol        = "tcp"
+#     rule_no         = 145
+#     action          = "allow"
+#     ipv6_cidr_block = "::/0"
+#     from_port       = 32768
+#     to_port         = 65535
+#   }
 
-  # Allow outbound Puppet (IPv4 only) to the puppetmaster
-  egress {
-    protocol   = "tcp"
-    rule_no    = 150
-    action     = "allow"
-    cidr_block = "${local.external_ips["puppet.jenkins.io"]}/32"
-    from_port  = 8140
-    to_port    = 8140
-  }
+#   # Allow outbound Puppet (IPv4 only) to the puppetmaster
+#   egress {
+#     protocol   = "tcp"
+#     rule_no    = 150
+#     action     = "allow"
+#     cidr_block = "${local.external_ips["puppet.jenkins.io"]}/32"
+#     from_port  = 8140
+#     to_port    = 8140
+#   }
 
-  # Allow outbound LDAP (IPv4 only) to the Jenkins LDAP
-  egress {
-    protocol   = "tcp"
-    rule_no    = 155
-    action     = "allow"
-    cidr_block = "${local.external_ips["ldap.jenkins.io"]}/32"
-    from_port  = 636
-    to_port    = 636
-  }
+#   # Allow outbound LDAP (IPv4 only) to the Jenkins LDAP
+#   egress {
+#     protocol   = "tcp"
+#     rule_no    = 155
+#     action     = "allow"
+#     cidr_block = "${local.external_ips["ldap.jenkins.io"]}/32"
+#     from_port  = 636
+#     to_port    = 636
+#   }
 
-  # Allow SSH egress to the other (private) subnets to ensure we can launch SSH agents
-  dynamic "egress" {
-    for_each = toset(module.vpc.private_subnets_cidr_blocks)
-    content {
-      protocol   = "tcp"
-      rule_no    = sum([160, index(module.vpc.private_subnets_cidr_blocks, egress.value)])
-      action     = "allow"
-      cidr_block = egress.value
-      from_port  = 22
-      to_port    = 22
-    }
-  }
-}
+#   # Allow SSH egress to the other (private) subnets to ensure we can launch SSH agents
+#   dynamic "egress" {
+#     for_each = toset(module.vpc.private_subnets_cidr_blocks)
+#     content {
+#       protocol   = "tcp"
+#       rule_no    = sum([160, index(module.vpc.private_subnets_cidr_blocks, egress.value)])
+#       action     = "allow"
+#       cidr_block = egress.value
+#       from_port  = 22
+#       to_port    = 22
+#     }
+#   }
+# }
 
-resource "aws_network_acl" "ci_jenkins_io_vm_agents" {
-  # No IPv6 on this one
+# resource "aws_network_acl" "ci_jenkins_io_vm_agents" {
+#   # No IPv6 on this one
 
-  # Do NOT use the "default_vpc_id" module output ;)
-  vpc_id     = module.vpc.vpc_id
-  subnet_ids = [module.vpc.private_subnets[0]]
+#   # Do NOT use the "default_vpc_id" module output ;)
+#   vpc_id     = module.vpc.vpc_id
+#   subnet_ids = [module.vpc.private_subnets[0]]
 
-  ## Get started with https://docs.aws.amazon.com/vpc/latest/userguide/custom-network-acl.html
+#   ## Get started with https://docs.aws.amazon.com/vpc/latest/userguide/custom-network-acl.html
 
-  # Ephemeral ports for incoming responses to HTTP outbound requests
-  ingress {
-    protocol   = "tcp"
-    rule_no    = 140
-    action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    from_port  = 32768
-    to_port    = 65535
-  }
+#   # Ephemeral ports for incoming responses to HTTP outbound requests
+#   ingress {
+#     protocol   = "tcp"
+#     rule_no    = 140
+#     action     = "allow"
+#     cidr_block = "0.0.0.0/0"
+#     from_port  = 32768
+#     to_port    = 65535
+#   }
 
-  # Allow inbound SSH from controller only (private route)
-  ingress {
-    protocol   = "tcp"
-    rule_no    = 120
-    action     = "allow"
-    cidr_block = "${aws_instance.ci_jenkins_io.private_ip}/32"
-    from_port  = 22
-    to_port    = 22
-  }
+#   # Allow inbound SSH from controller only (private route)
+#   ingress {
+#     protocol   = "tcp"
+#     rule_no    = 120
+#     action     = "allow"
+#     cidr_block = "${aws_instance.ci_jenkins_io.private_ip}/32"
+#     from_port  = 22
+#     to_port    = 22
+#   }
 
-  # Allow outbound HTTP
-  egress {
-    protocol   = "tcp"
-    rule_no    = 100
-    action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    from_port  = 80
-    to_port    = 80
-  }
+#   # Allow outbound HTTP
+#   egress {
+#     protocol   = "tcp"
+#     rule_no    = 100
+#     action     = "allow"
+#     cidr_block = "0.0.0.0/0"
+#     from_port  = 80
+#     to_port    = 80
+#   }
 
-  # Allow outbound HTTPS
-  egress {
-    protocol   = "tcp"
-    rule_no    = 110
-    action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    from_port  = 443
-    to_port    = 443
-  }
+#   # Allow outbound HTTPS
+#   egress {
+#     protocol   = "tcp"
+#     rule_no    = 110
+#     action     = "allow"
+#     cidr_block = "0.0.0.0/0"
+#     from_port  = 443
+#     to_port    = 443
+#   }
 
-  # Allow outbound HKP (OpenPGP KeyServer) - https://github.com/jenkins-infra/helpdesk/issues/3664
-  egress {
-    protocol   = "tcp"
-    rule_no    = 120
-    action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    from_port  = 11371
-    to_port    = 11371
-  }
+#   # Allow outbound HKP (OpenPGP KeyServer) - https://github.com/jenkins-infra/helpdesk/issues/3664
+#   egress {
+#     protocol   = "tcp"
+#     rule_no    = 120
+#     action     = "allow"
+#     cidr_block = "0.0.0.0/0"
+#     from_port  = 11371
+#     to_port    = 11371
+#   }
 
-  # Allow outbound TCP Jenkins Agent JNLP protocol to controller only
-  egress {
-    protocol   = "tcp"
-    rule_no    = 150
-    action     = "allow"
-    cidr_block = "${aws_eip.ci_jenkins_io.public_ip}/32"
-    from_port  = 50000
-    to_port    = 50000
-  }
+#   # Allow outbound TCP Jenkins Agent JNLP protocol to controller only
+#   egress {
+#     protocol   = "tcp"
+#     rule_no    = 150
+#     action     = "allow"
+#     cidr_block = "${aws_eip.ci_jenkins_io.public_ip}/32"
+#     from_port  = 50000
+#     to_port    = 50000
+#   }
 
-  # Ephemeral ports in response to inbound requests
-  egress {
-    protocol   = "tcp"
-    rule_no    = 140
-    action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    #  A NAT gateway uses ports 1024–65535
-    from_port = 1024
-    to_port   = 65535
-  }
-}
+#   # Ephemeral ports in response to inbound requests
+#   egress {
+#     protocol   = "tcp"
+#     rule_no    = 140
+#     action     = "allow"
+#     cidr_block = "0.0.0.0/0"
+#     #  A NAT gateway uses ports 1024–65535
+#     from_port = 1024
+#     to_port   = 65535
+#   }
+# }
 
 ### Security Groups
 resource "aws_security_group" "ephemeral_vm_agents" {
@@ -295,6 +295,24 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_from_cijio_controller"
   from_port         = 22
   ip_protocol       = "tcp"
   to_port           = 22
+}
+
+resource "aws_vpc_security_group_ingress_rule" "allow_winrm_from_cijio_controller" {
+  description       = "Allow WinRM from ci.jenkins.io controller"
+  security_group_id = aws_security_group.ephemeral_vm_agents.id
+  cidr_ipv4         = "${aws_instance.ci_jenkins_io.private_ip}/32"
+  from_port         = 5985 # WinRM HTTP
+  ip_protocol       = "tcp"
+  to_port           = 5986 # WinRM HTTPS
+}
+
+resource "aws_vpc_security_group_ingress_rule" "allow_cifs_from_cijio_controller" {
+  description       = "Allow CIFS over TCP from ci.jenkins.io controller"
+  security_group_id = aws_security_group.ephemeral_vm_agents.id
+  cidr_ipv4         = "${aws_instance.ci_jenkins_io.private_ip}/32"
+  from_port         = 445 # CIFS over TCP
+  ip_protocol       = "tcp"
+  to_port           = 445 # CIFS over TCP
 }
 
 resource "aws_security_group" "restricted_in_ssh" {
@@ -497,6 +515,30 @@ resource "aws_vpc_security_group_egress_rule" "allow_ssh_out_private_subnets" {
   from_port   = 22
   ip_protocol = "tcp"
   to_port     = 22
+}
+
+resource "aws_vpc_security_group_egress_rule" "allow_winrm_out_private_subnets" {
+  for_each = toset(module.vpc.private_subnets_cidr_blocks)
+
+  description       = "Allow WinRM to the private subnet ${each.key}"
+  security_group_id = aws_security_group.ci_jenkins_io_controller.id
+
+  cidr_ipv4   = each.key
+  from_port   = 5985 # WinRM HTTP
+  ip_protocol = "tcp"
+  to_port     = 5986 # WinRM HTTPS
+}
+
+resource "aws_vpc_security_group_egress_rule" "allow_cifs_out_private_subnets" {
+  for_each = toset(module.vpc.private_subnets_cidr_blocks)
+
+  description       = "Allow CIFS over TCP to the private subnet ${each.key}"
+  security_group_id = aws_security_group.ci_jenkins_io_controller.id
+
+  cidr_ipv4   = each.key
+  from_port   = 445 # CIFS over TCP
+  ip_protocol = "tcp"
+  to_port     = 445 # CIFS over TCP
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_jnlp_in_private_subnets" {
