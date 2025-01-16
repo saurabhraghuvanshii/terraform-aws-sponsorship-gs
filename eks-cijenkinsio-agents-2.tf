@@ -80,7 +80,6 @@ module "cijenkinsio_agents_2" {
   cluster_addons = {
     coredns = {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
-      # TODO: track with updatecli
       addon_version = local.cijenkinsio_agents_2_cluster_addons_coredns_addon_version
       configuration_values = jsonencode({
         "tolerations" = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
@@ -90,24 +89,20 @@ module "cijenkinsio_agents_2" {
     # See https://kubernetes.io/releases/version-skew-policy/#kube-proxy
     kube-proxy = {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
-      # TODO: track with updatecli
       addon_version = local.cijenkinsio_agents_2_cluster_addons_kubeProxy_addon_version
     }
     # https://github.com/aws/amazon-vpc-cni-k8s/releases
     vpc-cni = {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
-      # TODO: track with updatecli
       addon_version = local.cijenkinsio_agents_2_cluster_addons_vpcCni_addon_version
     }
     eks-pod-identity-agent = {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
-      # TODO: track with updatecli
       addon_version = local.cijenkinsio_agents_2_cluster_addons_eksPodIdentityAgent_addon_version
     }
     ## https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/CHANGELOG.md
     aws-ebs-csi-driver = {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
-      # TODO: track with updatecli
       addon_version = local.cijenkinsio_agents_2_cluster_addons_awsEbsCsiDriver_addon_version
       configuration_values = jsonencode({
         "controller" = {
