@@ -12,11 +12,11 @@ locals {
     controller_vm_fqdn = "aws.ci.jenkins.io"
   }
 
-  cijenkinsio_agents_2_cluster_addons_coredns_addon_version = "v1.11.3-eksbuild.2"
-  cijenkinsio_agents_2_cluster_addons_kubeProxy_addon_version = "v1.29.11-eksbuild.2"
-  cijenkinsio_agents_2_cluster_addons_vpcCni_addon_version = "v1.19.0-eksbuild.1"
+  cijenkinsio_agents_2_cluster_addons_coredns_addon_version             = "v1.11.3-eksbuild.2"
+  cijenkinsio_agents_2_cluster_addons_kubeProxy_addon_version           = "v1.29.11-eksbuild.2"
+  cijenkinsio_agents_2_cluster_addons_vpcCni_addon_version              = "v1.19.2-eksbuild.1"
   cijenkinsio_agents_2_cluster_addons_eksPodIdentityAgent_addon_version = "v1.3.4-eksbuild.1"
-  cijenkinsio_agents_2_cluster_addons_awsEbsCsiDriver_addon_version = "v1.38.1-eksbuild.1"
+  cijenkinsio_agents_2_cluster_addons_awsEbsCsiDriver_addon_version     = "v1.38.1-eksbuild.1"
 
   cijenkinsio_agents_2 = {
     api-ipsv4 = ["10.0.131.86/32", "10.0.133.102/32"]
