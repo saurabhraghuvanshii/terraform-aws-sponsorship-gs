@@ -552,3 +552,15 @@ resource "aws_vpc_security_group_ingress_rule" "allow_jnlp_in_private_subnets" {
   ip_protocol = "tcp"
   to_port     = 50000
 }
+
+resource "aws_vpc_security_group_egress_rule" "allow_https_out_to_eks_privates_ips" {
+  for_each = toset(local.cijenkinsio_agents_2.api-ipsv4)
+
+  description       = "Allow HTTPS to ip ${each.key} for eks api"
+  security_group_id = aws_security_group.ci_jenkins_io_controller.id
+
+  cidr_ipv4   = each.key
+  from_port   = 443
+  ip_protocol = "tcp"
+  to_port     = 443
+}

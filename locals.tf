@@ -19,6 +19,7 @@ locals {
   cijenkinsio_agents_2_cluster_addons_awsEbsCsiDriver_addon_version = "v1.38.1-eksbuild.1"
 
   cijenkinsio_agents_2 = {
+    api-ipsv4 = ["10.0.131.86/32", "10.0.133.102/32"]
     autoscaler = {
       namespace      = "autoscaler",
       serviceaccount = "autoscaler",
