@@ -32,6 +32,9 @@ locals {
       namespace      = "kube-system",
       serviceaccount = "ebs-csi-controller-sa",
     },
+    artifact_caching_proxy = {
+      ips = [for subnet in local.vpc_private_subnets : cidrhost(subnet.cidr, "-8")],
+    }
     kubernetes_groups = ["ci-jenkins-io"],
     node_groups = {
       "applications" = {

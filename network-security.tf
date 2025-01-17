@@ -315,6 +315,17 @@ resource "aws_vpc_security_group_ingress_rule" "allow_cifs_from_cijio_controller
   to_port           = 445 # CIFS over TCP
 }
 
+resource "aws_vpc_security_group_egress_rule" "allow_acp_from_cijio_agents" {
+  for_each = toset(local.cijenkinsio_agents_2.artifact_caching_proxy.ips)
+
+  description       = "Allow Artifact Caching Proxy (8080) from ci.jenkins.io VM agents"
+  security_group_id = aws_security_group.ephemeral_vm_agents.id
+  cidr_ipv4         = "${each.value}/32"
+  from_port         = 8080
+  ip_protocol       = "tcp"
+  to_port           = 8080
+}
+
 resource "aws_security_group" "restricted_in_ssh" {
   name        = "restricted-in-ssh"
   description = "Allow inbound SSH only from trusted sources (admins or VPN)"
