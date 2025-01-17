@@ -25,7 +25,10 @@ resource "local_file" "jenkins_infra_data_report" {
             "tolerations" = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
           },
         }
-
+        artifact_caching_proxy = {
+          ips = local.cijenkinsio_agents_2.artifact_caching_proxy.ips,
+        },
+        "subnet_ids" = [module.vpc.private_subnets[1], module.vpc.private_subnets[2]],
       },
     },
 

@@ -96,10 +96,6 @@ module "cijenkinsio_agents_2" {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
       addon_version = local.cijenkinsio_agents_2_cluster_addons_vpcCni_addon_version
     }
-    eks-pod-identity-agent = {
-      # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
-      addon_version = local.cijenkinsio_agents_2_cluster_addons_eksPodIdentityAgent_addon_version
-    }
     ## https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/CHANGELOG.md
     aws-ebs-csi-driver = {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
@@ -223,9 +219,8 @@ module "cijenkinsio_agents_2_awslb_irsa_role" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "5.52.2"
 
-  role_name                                                       = "${module.cijenkinsio_agents_2.cluster_name}-awslb"
-  attach_load_balancer_controller_policy                          = true
-  attach_load_balancer_controller_targetgroup_binding_only_policy = true
+  role_name                              = "${module.cijenkinsio_agents_2.cluster_name}-awslb"
+  attach_load_balancer_controller_policy = true
 
   oidc_providers = {
     main = {
@@ -304,11 +299,16 @@ resource "helm_release" "cijenkinsio_agents_2_awslb" {
   values = [yamlencode({
     clusterName = module.cijenkinsio_agents_2.cluster_name,
     serviceAccount = {
-      create = "false",
-      name   = local.cijenkinsio_agents_2["awslb"]["serviceaccount"]
+      create = true,
+      name   = local.cijenkinsio_agents_2["awslb"]["serviceaccount"],
+      annotations = {
+        "eks.amazonaws.com/role-arn" = module.cijenkinsio_agents_2_awslb_irsa_role.iam_role_arn,
+      },
     },
-    nodeSelector = module.cijenkinsio_agents_2.eks_managed_node_groups["applications"].node_group_labels,
-    tolerations  = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
+    # We do not want to use ingress ALB class
+    createIngressClassResource = false,
+    nodeSelector               = module.cijenkinsio_agents_2.eks_managed_node_groups["applications"].node_group_labels,
+    tolerations                = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
   })]
 }
 
