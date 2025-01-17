@@ -24,6 +24,10 @@ locals {
       namespace      = "autoscaler",
       serviceaccount = "autoscaler",
     },
+    awslb = {
+      namespace      = "awslb"
+      serviceaccount = "awslb",
+    },
     ebs-csi = {
       namespace      = "kube-system",
       serviceaccount = "ebs-csi-controller-sa",

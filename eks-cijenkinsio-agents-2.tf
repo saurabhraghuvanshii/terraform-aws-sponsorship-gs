@@ -219,6 +219,24 @@ module "cijenkinsio_agents_2_ebscsi_irsa_role" {
   tags = local.common_tags
 }
 
+module "cijenkinsio_agents_2_awslb_irsa_role" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "5.52.2"
+
+  role_name                                                       = "${module.cijenkinsio_agents_2.cluster_name}-awslb"
+  attach_load_balancer_controller_policy                          = true
+  attach_load_balancer_controller_targetgroup_binding_only_policy = true
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.cijenkinsio_agents_2.oidc_provider_arn
+      namespace_service_accounts = ["${local.cijenkinsio_agents_2["awslb"]["namespace"]}:${local.cijenkinsio_agents_2["awslb"]["serviceaccount"]}"]
+    }
+  }
+
+  tags = local.common_tags
+}
+
 # From https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/examples/kubernetes/storageclass/manifests/storageclass.yaml
 resource "kubernetes_storage_class" "cijenkinsio_agents_2_ebs_csi_premium_retain" {
   provider = kubernetes.cijenkinsio_agents_2
@@ -270,6 +288,28 @@ resource "helm_release" "cijenkinsio_agents_2_cluster_autoscaler" {
       nodeTolerations    = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
     })
   ]
+}
+
+## Install AWS Load Balancer Controller
+resource "helm_release" "cijenkinsio_agents_2_awslb" {
+  provider   = helm.cijenkinsio_agents_2
+  name       = "aws-load-balancer-controller"
+  repository = "https://aws.github.io/eks-charts"
+  chart      = "aws-load-balancer-controller"
+  # TODO: track with updatecli
+  version          = "1.11.0"
+  create_namespace = true
+  namespace        = local.cijenkinsio_agents_2["awslb"]["namespace"]
+
+  values = [yamlencode({
+    clusterName = module.cijenkinsio_agents_2.cluster_name,
+    serviceAccount = {
+      create = "false",
+      name   = local.cijenkinsio_agents_2["awslb"]["serviceaccount"]
+    },
+    nodeSelector = module.cijenkinsio_agents_2.eks_managed_node_groups["applications"].node_group_labels,
+    tolerations  = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
+  })]
 }
 
 ### Define admin credential to be used in jenkins-infra/kubernetes-management
