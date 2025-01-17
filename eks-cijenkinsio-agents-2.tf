@@ -113,7 +113,7 @@ module "cijenkinsio_agents_2" {
   }
 
   eks_managed_node_groups = {
-    # This worker pool is expected to host the "technical" services such as cluster-autoscaler, data cluster-agent, ACP, etc.
+    # This worker pool is expected to host the "technical" services such as karpenter, data cluster-agent, ACP, etc.
     applications = {
       name           = local.cijenkinsio_agents_2["node_groups"]["applications"]["name"]
       instance_types = ["t4g.xlarge"]
@@ -175,25 +175,6 @@ module "cijenkinsio_agents_2" {
       cidr_blocks = ["${aws_instance.ci_jenkins_io.private_ip}/32"]
     },
   }
-}
-
-module "cijenkinsio_agents_2_autoscaler_irsa_role" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "5.52.2"
-
-  role_name                        = "${module.cijenkinsio_agents_2.cluster_name}-cluster-autoscaler"
-  attach_cluster_autoscaler_policy = true
-
-  cluster_autoscaler_cluster_names = [module.cijenkinsio_agents_2.cluster_name]
-
-  oidc_providers = {
-    main = {
-      provider_arn               = module.cijenkinsio_agents_2.oidc_provider_arn
-      namespace_service_accounts = ["${local.cijenkinsio_agents_2["autoscaler"]["namespace"]}:${local.cijenkinsio_agents_2["autoscaler"]["serviceaccount"]}"]
-    }
-  }
-
-  tags = local.common_tags
 }
 
 module "cijenkinsio_agents_2_ebscsi_irsa_role" {
@@ -260,29 +241,6 @@ resource "kubernetes_storage_class" "cijenkinsio_agents_2_ebs_csi_premium_retain
 # Used by kubernetes/helm provider to authenticate to cluster with the AWS IAM identity (using a token)
 data "aws_eks_cluster_auth" "cijenkinsio_agents_2" {
   name = module.cijenkinsio_agents_2.cluster_name
-}
-
-## Install Cluster Autoscaler
-resource "helm_release" "cijenkinsio_agents_2_cluster_autoscaler" {
-  provider   = helm.cijenkinsio_agents_2
-  name       = "cluster-autoscaler"
-  repository = "https://kubernetes.github.io/autoscaler"
-  chart      = "cluster-autoscaler"
-  # TODO: track with updatecli
-  version          = "9.43.2"
-  create_namespace = true
-  namespace        = local.cijenkinsio_agents_2["autoscaler"]["namespace"]
-
-  values = [
-    templatefile("./helm/cluster-autoscaler-values.yaml.tfpl", {
-      region             = local.region,
-      serviceAccountName = local.cijenkinsio_agents_2["autoscaler"]["serviceaccount"],
-      autoscalerRoleArn  = module.cijenkinsio_agents_2_autoscaler_irsa_role.iam_role_arn,
-      clusterName        = module.cijenkinsio_agents_2.cluster_name,
-      nodeSelectors      = module.cijenkinsio_agents_2.eks_managed_node_groups["applications"].node_group_labels,
-      nodeTolerations    = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
-    })
-  ]
 }
 
 ## Install AWS Load Balancer Controller
