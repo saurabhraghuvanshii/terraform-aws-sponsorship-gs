@@ -96,10 +96,6 @@ module "cijenkinsio_agents_2" {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
       addon_version = local.cijenkinsio_agents_2_cluster_addons_vpcCni_addon_version
     }
-    eks-pod-identity-agent = {
-      # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
-      addon_version = local.cijenkinsio_agents_2_cluster_addons_eksPodIdentityAgent_addon_version
-    }
     ## https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/CHANGELOG.md
     aws-ebs-csi-driver = {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
