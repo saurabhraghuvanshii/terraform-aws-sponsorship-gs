@@ -20,9 +20,10 @@ locals {
 
   cijenkinsio_agents_2 = {
     api-ipsv4 = ["10.0.131.86/32", "10.0.133.102/32"]
-    autoscaler = {
-      namespace      = "autoscaler",
-      serviceaccount = "autoscaler",
+    karpenter = {
+      node_role_name = "KarpenterNodeRole-cijenkinsio-agents-2",
+      namespace      = "karpenter",
+      serviceaccount = "karpenter",
     },
     awslb = {
       namespace      = "awslb"

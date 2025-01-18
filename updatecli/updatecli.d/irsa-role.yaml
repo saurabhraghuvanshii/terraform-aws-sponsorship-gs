@@ -23,15 +23,6 @@ sources:
       targetsystem: aws
 
 targets:
-  upgradeAutoscalerModuleVersion:
-    name: Update the Terraform "cijenkinsio_agents_2_autoscaler_irsa_role" module version in terraform-aws-sponsorship/eks-cijenkinsio-agents-2.tf
-    kind: hcl
-    sourceid: getLatestVersion
-    spec:
-      file: eks-cijenkinsio-agents-2.tf
-      path: module.cijenkinsio_agents_2_autoscaler_irsa_role.version
-    scmid: default
-
   upgradeEbsCsiModuleVersion:
     name: Update the Terraform "cijenkinsio_agents_2_ebscsi_irsa_role" module version in terraform-aws-sponsorship/eks-cijenkinsio-agents-2.tf
     kind: hcl
