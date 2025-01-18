@@ -1,14 +1,6 @@
-# Define a KMS main key to encrypt the EKS cluster
-resource "aws_kms_key" "cijenkinsio_agents_2" {
-  description         = "EKS Secret Encryption Key for the cluster cijenkinsio-agents-2"
-  enable_key_rotation = true
-
-  tags = merge(local.common_tags, {
-    associated_service = "eks/cijenkinsio-agents-2"
-  })
-}
-
-# EKS Cluster definition
+################################################################################
+# EKS Cluster ci.jenkins.io agents-2 definition
+################################################################################
 module "cijenkinsio_agents_2" {
   source  = "terraform-aws-modules/eks/aws"
   version = "20.29.0"
@@ -177,6 +169,17 @@ module "cijenkinsio_agents_2" {
   }
 }
 
+################################################################################
+# EKS Cluster AWS resources for ci.jenkins.io agents-2
+################################################################################
+resource "aws_kms_key" "cijenkinsio_agents_2" {
+  description         = "EKS Secret Encryption Key for the cluster cijenkinsio-agents-2"
+  enable_key_rotation = true
+
+  tags = merge(local.common_tags, {
+    associated_service = "eks/cijenkinsio-agents-2"
+  })
+}
 module "cijenkinsio_agents_2_ebscsi_irsa_role" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "5.52.2"
@@ -195,7 +198,6 @@ module "cijenkinsio_agents_2_ebscsi_irsa_role" {
 
   tags = local.common_tags
 }
-
 module "cijenkinsio_agents_2_awslb_irsa_role" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "5.52.2"
@@ -213,6 +215,46 @@ module "cijenkinsio_agents_2_awslb_irsa_role" {
   tags = local.common_tags
 }
 
+
+################################################################################
+# Karpenter Resources
+# - https://aws-ia.github.io/terraform-aws-eks-blueprints/patterns/karpenter-mng/
+# - https://karpenter.sh/v0.32/getting-started/getting-started-with-karpenter/
+################################################################################
+module "cijenkinsio_agents_2_karpenter" {
+  source = "terraform-aws-modules/eks/aws//modules/karpenter"
+  # TODO: track with updatecli
+  version = "20.24"
+
+  cluster_name          = module.cijenkinsio_agents_2.cluster_name
+  enable_v1_permissions = true
+  namespace             = local.cijenkinsio_agents_2["karpenter"]["namespace"]
+
+  # TODO: Name needs to match role name passed to the EC2NodeClass in CRDs below
+  node_iam_role_use_name_prefix   = false
+  node_iam_role_name              = local.cijenkinsio_agents_2["karpenter"]["node_role_name"]
+  create_pod_identity_association = false # we use IRSA
+
+  enable_irsa                     = true
+  irsa_namespace_service_accounts = ["${local.cijenkinsio_agents_2["karpenter"]["namespace"]}:${local.cijenkinsio_agents_2["karpenter"]["serviceaccount"]}"]
+  irsa_oidc_provider_arn          = module.cijenkinsio_agents_2.oidc_provider_arn
+
+  # Used to attach additional IAM policies to the Karpenter node IAM role
+  # node_iam_role_additional_policies = {
+  #   AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  # }
+
+  tags = local.common_tags
+}
+
+################################################################################
+# Kubernetes resources in the EKS cluster ci.jenkins.io agents-2
+# Note: provider is defined in providers.tf but requires the eks-token below
+################################################################################
+data "aws_eks_cluster_auth" "cijenkinsio_agents_2" {
+  # Used by kubernetes/helm provider to authenticate to cluster with the AWS IAM identity (using a token)
+  name = module.cijenkinsio_agents_2.cluster_name
+}
 # From https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/examples/kubernetes/storageclass/manifests/storageclass.yaml
 resource "kubernetes_storage_class" "cijenkinsio_agents_2_ebs_csi_premium_retain" {
   provider = kubernetes.cijenkinsio_agents_2
@@ -237,12 +279,6 @@ resource "kubernetes_storage_class" "cijenkinsio_agents_2_ebs_csi_premium_retain
   allow_volume_expansion = true
   volume_binding_mode    = "WaitForFirstConsumer"
 }
-
-# Used by kubernetes/helm provider to authenticate to cluster with the AWS IAM identity (using a token)
-data "aws_eks_cluster_auth" "cijenkinsio_agents_2" {
-  name = module.cijenkinsio_agents_2.cluster_name
-}
-
 ## Install AWS Load Balancer Controller
 resource "helm_release" "cijenkinsio_agents_2_awslb" {
   provider   = helm.cijenkinsio_agents_2
@@ -269,8 +305,7 @@ resource "helm_release" "cijenkinsio_agents_2_awslb" {
     tolerations                = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
   })]
 }
-
-### Define admin credential to be used in jenkins-infra/kubernetes-management
+## Define admin credential to be used in jenkins-infra/kubernetes-management
 module "cijenkinsio_agents_2_admin_sa" {
   providers = {
     kubernetes = kubernetes.cijenkinsio_agents_2
@@ -280,7 +315,31 @@ module "cijenkinsio_agents_2_admin_sa" {
   cluster_hostname           = module.cijenkinsio_agents_2.cluster_endpoint
   cluster_ca_certificate_b64 = module.cijenkinsio_agents_2.cluster_certificate_authority_data
 }
-output "kubeconfig_cijenkinsio_agents_2" {
-  sensitive = true
-  value     = module.cijenkinsio_agents_2_admin_sa.kubeconfig
+resource "helm_release" "karpenter" {
+  provider         = helm.cijenkinsio_agents_2
+  name             = "karpenter"
+  namespace        = local.cijenkinsio_agents_2["karpenter"]["namespace"]
+  create_namespace = true
+  repository       = "oci://public.ecr.aws/karpenter"
+  chart            = "karpenter"
+  version          = "1.1.1"
+  wait             = false
+
+  values = [yamlencode({
+    nodeSelector = module.cijenkinsio_agents_2.eks_managed_node_groups["applications"].node_group_labels,
+    settings = {
+      clusterName       = module.cijenkinsio_agents_2.cluster_name,
+      clusterEndpoint   = module.cijenkinsio_agents_2.cluster_endpoint,
+      interruptionQueue = module.cijenkinsio_agents_2_karpenter.queue_name,
+    },
+    serviceAccount = {
+      create = true,
+      name   = local.cijenkinsio_agents_2["karpenter"]["serviceaccount"],
+      annotations = {
+        "eks.amazonaws.com/role-arn" = module.cijenkinsio_agents_2_karpenter.iam_role_arn,
+      },
+    },
+    tolerations = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
+    webhook     = { enabled = false },
+  })]
 }
