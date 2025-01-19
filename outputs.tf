@@ -19,12 +19,25 @@ resource "local_file" "jenkins_infra_data_report" {
       "cijenkinsio-agents-2" = {
         "cluster_endpoint"  = module.cijenkinsio_agents_2.cluster_endpoint,
         "kubernetes_groups" = local.cijenkinsio_agents_2.kubernetes_groups,
-        "node_groups" = {
-          "applications" = {
-            "labels"      = module.cijenkinsio_agents_2.eks_managed_node_groups["applications"].node_group_labels
-            "tolerations" = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
+        "node_groups" = merge(
+          {
+            "applications" = {
+              "labels"      = module.cijenkinsio_agents_2.eks_managed_node_groups["applications"].node_group_labels
+              "tolerations" = local.cijenkinsio_agents_2["system_node_pool"]["tolerations"],
+            }
           },
-        }
+          { for knp in local.cijenkinsio_agents_2.karpenter_node_pools :
+            knp.name => {
+              "labels" = knp.nodeLabels,
+              "tolerations" = [for taint in knp.taints : {
+                "effect" : taint.effect,
+                "key" : taint.key,
+                "operator" : "Equal",
+                "value" : "true"
+              }]
+            }
+          },
+        )
         artifact_caching_proxy = {
           ips = local.cijenkinsio_agents_2.artifact_caching_proxy.ips,
         },

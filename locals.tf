@@ -39,19 +39,61 @@ locals {
       ips = [for subnet in local.vpc_private_subnets : cidrhost(subnet.cidr, "-8")],
     }
     kubernetes_groups = ["ci-jenkins-io"],
-    node_groups = {
-      "applications" = {
-        name = "applications"
-        tolerations = [
+    system_node_pool = {
+      name = "applications"
+      tolerations = [
+        {
+          "effect" : "NoSchedule",
+          "key" : "${local.ci_jenkins_io["service_fqdn"]}/applications",
+          "operator" : "Equal",
+          "value" : "true"
+        },
+      ],
+    }
+    karpenter_node_pools = [
+      {
+        name         = "agents-linux-amd64"
+        os           = "linux"
+        architecture = "amd64"
+        spot         = true
+        nodeLabels = {
+          "jenkins" = "ci.jenkins.io",
+          "role"    = "jenkins-agents",
+        }
+        taints = [
           {
             "effect" : "NoSchedule",
-            "key" : "${local.ci_jenkins_io["service_fqdn"]}/applications",
+            "key" : "${local.ci_jenkins_io["service_fqdn"]}/agents",
+            "operator" : "Equal",
+            "value" : "true",
+          },
+        ],
+      },
+      {
+        name         = "agents-bom-linux-amd64"
+        os           = "linux"
+        architecture = "amd64"
+        spot         = true
+        nodeLabels = {
+          "jenkins" = "ci.jenkins.io",
+          "role"    = "jenkins-agents-bom",
+        }
+        taints = [
+          {
+            "effect" : "NoSchedule",
+            "key" : "${local.ci_jenkins_io["service_fqdn"]}/agents",
+            "operator" : "Equal",
+            "value" : "true"
+          },
+          {
+            "effect" : "NoSchedule",
+            "key" : "${local.ci_jenkins_io["service_fqdn"]}/bom",
             "operator" : "Equal",
             "value" : "true"
           },
         ],
       },
-    },
+    ]
     subnets = ["eks-1", "eks-2"]
   }
 

@@ -14,3 +14,9 @@ variable "outbound_ip_count" {
   description = "Number of outbound IPs to use."
   default     = 2
 }
+
+variable "terratest" {
+  type        = bool
+  description = "value"
+  default     = false
+}
