@@ -33,7 +33,6 @@ sources:
           --path "/aws/service/eks/optimized-ami/1.29/" \
           --recursive \
           --query "Parameters[?contains(Name, 'amazon-linux-2023/arm64/standard/recommended')].Value" \
-          --profile terraform-admin \
           --region us-east-2 \
           --output json | jq -r '.[0] | fromjson | .release_version')
         echo $output
