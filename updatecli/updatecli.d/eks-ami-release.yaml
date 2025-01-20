@@ -27,6 +27,7 @@ sources:
       - getClusterKubernetesVersion
     spec:
       command: |
+        which jq
         set -e
         output=$(aws ssm get-parameters-by-path \
           --path "/aws/service/eks/optimized-ami/1.29/" \
