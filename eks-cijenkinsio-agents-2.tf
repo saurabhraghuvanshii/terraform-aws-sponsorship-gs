@@ -112,7 +112,6 @@ module "cijenkinsio_agents_2" {
       capacity_type  = "ON_DEMAND"
       # Starting on 1.30, AL2023 is the default AMI type for EKS managed node groups
       ami_type = "AL2023_ARM_64_STANDARD"
-      # TODO: track with updatecli
       ami_release_version = local.cijenkinsio_agents_2_ami_release_version
       min_size            = 2
       max_size            = 3 # Usually 2 nodes, but accept 1 additional surging node
