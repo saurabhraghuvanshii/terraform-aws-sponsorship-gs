@@ -27,13 +27,15 @@ sources:
       - getClusterKubernetesVersion
     spec:
       command: |
-        # warning filter must match the ami_type
-        aws ssm get-parameters-by-path \
-          --path "/aws/service/eks/optimized-ami/{{ source "getClusterKubernetesVersion" }}/" \
+        set -e
+        output=$(aws ssm get-parameters-by-path \
+          --path "/aws/service/eks/optimized-ami/1.29/" \
           --recursive \
           --query "Parameters[?contains(Name, 'amazon-linux-2023/arm64/standard/recommended')].Value" \
+          --profile terraform-admin \
           --region us-east-2 \
-          --output json | jq -r '.[0] | fromjson | .release_version'
+          --output json | jq -r '.[0] | fromjson | .release_version')
+        echo $output
       environments:
           - name: PATH
           - name: AWS_ACCESS_KEY_ID
@@ -50,8 +52,7 @@ targets:
     scmid: default
 
 actions:
-  amiReleasePR:
-    name: Create a pull request for updating the AMI release version
+  deafult:
     kind: github/pullrequest
     scmid: default
     title: Bump AMI release version for EKS managed node groups to {{ source "getLatestAmiReleaseVersion" }}
