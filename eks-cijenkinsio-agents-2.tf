@@ -223,7 +223,6 @@ module "cijenkinsio_agents_2_awslb_irsa_role" {
 ################################################################################
 module "cijenkinsio_agents_2_karpenter" {
   source = "terraform-aws-modules/eks/aws//modules/karpenter"
-  # TODO: track with updatecli
   version = "20.24"
 
   cluster_name          = module.cijenkinsio_agents_2.cluster_name
