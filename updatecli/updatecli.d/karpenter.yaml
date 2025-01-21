@@ -30,6 +30,7 @@ targets:
     spec:
       file: eks-cijenkinsio-agents-2.tf
       path: module.cijenkinsio_agents_2_karpenter.version
+    scmid: default
 
 actions:
   default:
