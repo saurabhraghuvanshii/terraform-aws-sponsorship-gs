@@ -74,7 +74,7 @@ module "cijenkinsio_agents_2" {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
       addon_version = local.cijenkinsio_agents_2_cluster_addons_coredns_addon_version
       configuration_values = jsonencode({
-        "tolerations" = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
+        "tolerations" = local.cijenkinsio_agents_2["system_node_pool"]["tolerations"],
       })
     }
     # Kube-proxy on an Amazon EKS cluster has the same compatibility and skew policy as Kubernetes
@@ -94,10 +94,10 @@ module "cijenkinsio_agents_2" {
       addon_version = local.cijenkinsio_agents_2_cluster_addons_awsEbsCsiDriver_addon_version
       configuration_values = jsonencode({
         "controller" = {
-          "tolerations" = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
+          "tolerations" = local.cijenkinsio_agents_2["system_node_pool"]["tolerations"],
         },
         "node" = {
-          "tolerations" = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
+          "tolerations" = local.cijenkinsio_agents_2["system_node_pool"]["tolerations"],
         },
       })
       service_account_role_arn = module.cijenkinsio_agents_2_ebscsi_irsa_role.iam_role_arn
@@ -107,7 +107,7 @@ module "cijenkinsio_agents_2" {
   eks_managed_node_groups = {
     # This worker pool is expected to host the "technical" services such as karpenter, data cluster-agent, ACP, etc.
     applications = {
-      name           = local.cijenkinsio_agents_2["node_groups"]["applications"]["name"]
+      name           = local.cijenkinsio_agents_2["system_node_pool"]["name"]
       instance_types = ["t4g.xlarge"]
       capacity_type  = "ON_DEMAND"
       # Starting on 1.30, AL2023 is the default AMI type for EKS managed node groups
@@ -122,9 +122,9 @@ module "cijenkinsio_agents_2" {
 
       labels = {
         jenkins = local.ci_jenkins_io["service_fqdn"]
-        role    = local.cijenkinsio_agents_2["node_groups"]["applications"]["name"]
+        role    = local.cijenkinsio_agents_2["system_node_pool"]["name"]
       }
-      taints = { for toleration_key, toleration_value in local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"] :
+      taints = { for toleration_key, toleration_value in local.cijenkinsio_agents_2["system_node_pool"]["tolerations"] :
         toleration_key => {
           key    = toleration_value["key"],
           value  = toleration_value.value
@@ -229,7 +229,6 @@ module "cijenkinsio_agents_2_karpenter" {
   enable_v1_permissions = true
   namespace             = local.cijenkinsio_agents_2["karpenter"]["namespace"]
 
-  # TODO: Name needs to match role name passed to the EC2NodeClass in CRDs below
   node_iam_role_use_name_prefix   = false
   node_iam_role_name              = local.cijenkinsio_agents_2["karpenter"]["node_role_name"]
   create_pod_identity_association = false # we use IRSA
@@ -244,6 +243,10 @@ module "cijenkinsio_agents_2_karpenter" {
   # }
 
   tags = local.common_tags
+}
+# https://karpenter.sh/docs/troubleshooting/#missing-service-linked-role
+resource "aws_iam_service_linked_role" "ec2_spot" {
+  aws_service_name = "spot.amazonaws.com"
 }
 
 ################################################################################
@@ -301,7 +304,7 @@ resource "helm_release" "cijenkinsio_agents_2_awslb" {
     # We do not want to use ingress ALB class
     createIngressClassResource = false,
     nodeSelector               = module.cijenkinsio_agents_2.eks_managed_node_groups["applications"].node_group_labels,
-    tolerations                = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
+    tolerations                = local.cijenkinsio_agents_2["system_node_pool"]["tolerations"],
   })]
 }
 ## Define admin credential to be used in jenkins-infra/kubernetes-management
@@ -314,7 +317,11 @@ module "cijenkinsio_agents_2_admin_sa" {
   cluster_hostname           = module.cijenkinsio_agents_2.cluster_endpoint
   cluster_ca_certificate_b64 = module.cijenkinsio_agents_2.cluster_certificate_authority_data
 }
-resource "helm_release" "karpenter" {
+moved {
+  from = helm_release.karpenter
+  to   = helm_release.cijenkinsio_agents_2_karpenter
+}
+resource "helm_release" "cijenkinsio_agents_2_karpenter" {
   provider         = helm.cijenkinsio_agents_2
   name             = "karpenter"
   namespace        = local.cijenkinsio_agents_2["karpenter"]["namespace"]
@@ -338,7 +345,129 @@ resource "helm_release" "karpenter" {
         "eks.amazonaws.com/role-arn" = module.cijenkinsio_agents_2_karpenter.iam_role_arn,
       },
     },
-    tolerations = local.cijenkinsio_agents_2["node_groups"]["applications"]["tolerations"],
+    tolerations = local.cijenkinsio_agents_2["system_node_pool"]["tolerations"],
     webhook     = { enabled = false },
   })]
+}
+# Karpenter Node Pools (not EKS Node Groups: Nodes are managed by Karpenter itself)
+resource "kubernetes_manifest" "cijenkinsio_agents_2_karpenter_node_pools" {
+  provider = kubernetes.cijenkinsio_agents_2
+
+  ## Disable this resource when running in terratest
+  # to avoid errors such as "cannot create REST client: no client config"
+  # or "The credentials configured in the provider block are not accepted by the API server. Error: Unauthorized"
+  for_each = var.terratest ? {} : {
+    for index, knp in local.cijenkinsio_agents_2.karpenter_node_pools : knp.name => knp
+  }
+
+  manifest = {
+    apiVersion = "karpenter.sh/v1"
+    kind       = "NodePool"
+
+    metadata = {
+      name = each.value.name
+    }
+
+    spec = {
+      template = {
+        metadata = {
+          labels = each.value.nodeLabels
+        }
+
+        spec = {
+          requirements = [
+            {
+              key      = "kubernetes.io/arch"
+              operator = "In"
+              values   = [each.value.architecture]
+            },
+            {
+              key      = "kubernetes.io/os"
+              operator = "In"
+              values   = [each.value.os]
+            },
+            {
+              key      = "karpenter.sh/capacity-type"
+              operator = "In"
+
+              values = compact([
+                # When spot is enabled, it's the first element and then fall back to on-demand
+                lookup(each.value, "spot", false) ? "spot" : "",
+                "on-demand"
+              ])
+            },
+            {
+              key      = "karpenter.k8s.aws/instance-category"
+              operator = "In"
+              values   = ["c", "m", "r"]
+            },
+            {
+              key      = "karpenter.k8s.aws/instance-generation"
+              operator = "Gt"
+              values   = ["2"]
+            },
+          ],
+          nodeClassRef = {
+            group = "karpenter.k8s.aws"
+            kind  = "EC2NodeClass"
+            name  = each.value.name
+          }
+          # If a Node stays up more than 48h, it has to be purged
+          expireAfter = "48h"
+          taints = [for taint in each.value.taints : {
+            key    = taint.key,
+            value  = taint.value,
+            effect = taint.effect,
+          }]
+        }
+      }
+      limits = {
+        cpu = 1600 # 8 vCPUS x 200 agents
+      }
+      disruption = {
+        consolidationPolicy = "WhenEmptyOrUnderutilized"
+        consolidateAfter    = "1m" # Linux Billing cycle on EC2
+      }
+    }
+  }
+}
+# Karpenter Node Classes (setting up AMI, network, IAM permissions, etc.)
+resource "kubernetes_manifest" "cijenkinsio_agents_2_karpenter_nodeclasses" {
+  provider = kubernetes.cijenkinsio_agents_2
+
+  ## Disable this resource when running in terratest
+  # to avoid errors such as "cannot create REST client: no client config"
+  # or "The credentials configured in the provider block are not accepted by the API server. Error: Unauthorized"
+  for_each = var.terratest ? {} : {
+    for index, knp in local.cijenkinsio_agents_2.karpenter_node_pools : knp.name => knp
+  }
+
+  manifest = {
+    apiVersion = "karpenter.k8s.aws/v1"
+    kind       = "EC2NodeClass"
+
+    metadata = {
+      name = each.value.name
+    }
+
+    spec = {
+      role = module.cijenkinsio_agents_2_karpenter.node_iam_role_name
+      # "KarpenterNodeRole-cijenkinsio-agents-2" # TODO: templatize from karpenter module resources (node role name)
+      subnetSelectorTerms = [for subnet_id in slice(module.vpc.private_subnets, 1, 3) : { id = subnet_id }]
+      securityGroupSelectorTerms = [
+        {
+          id = module.cijenkinsio_agents_2.node_security_group_id
+        }
+      ]
+      amiSelectorTerms = [
+        {
+          # Few notes about AMI aliases (ref. karpenter and AWS EKS docs.)
+          # - WindowsXXXX only has the "latest" version available
+          # - Windows 2022 is our default OS choice for Windows containers nodes
+          # - Amazon Linux 2023 is our default OS choice for Linux containers nodes
+          alias = each.value.os == "windows" ? "windows2022@latest" : "al2023@v20241213"
+        }
+      ]
+    }
+  }
 }

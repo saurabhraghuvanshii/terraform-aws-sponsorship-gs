@@ -12,7 +12,6 @@ terraform(
   productionCredentials: [
     string(variable: 'AWS_ACCESS_KEY_ID', credentialsId: 'production-terraform-aws-sponsorship-access-key'),
     string(variable: 'AWS_SECRET_ACCESS_KEY', credentialsId:'production-terraform-aws-sponsorship-secret-key'),
-
     file(variable: 'BACKEND_CONFIG_FILE', credentialsId: 'production-terraform-aws-sponsorship-backend-config'),
   ],
   publishReports: ['jenkins-infra-data-reports/aws-sponsorship.json'],
