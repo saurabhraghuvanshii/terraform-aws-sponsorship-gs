@@ -51,7 +51,7 @@ targets:
     scmid: default
 
 actions:
-  deafult:
+  default:
     kind: github/pullrequest
     scmid: default
     title: Bump AMI release version for EKS managed node groups to {{ source "getLatestAmiReleaseVersion" }}
