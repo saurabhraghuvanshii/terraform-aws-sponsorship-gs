@@ -223,7 +223,7 @@ module "cijenkinsio_agents_2_awslb_irsa_role" {
 ################################################################################
 module "cijenkinsio_agents_2_karpenter" {
   source  = "terraform-aws-modules/eks/aws//modules/karpenter"
-  version = "20.33.0"
+  version = "20.33.1"
 
   cluster_name          = module.cijenkinsio_agents_2.cluster_name
   enable_v1_permissions = true
