@@ -35,6 +35,10 @@ sources:
           --region us-east-2 \
           --output json | jq -r '.[0] | fromjson | .release_version')
         echo -n "$release_version"
+      environments:
+        - name: PATH
+        - name: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
 
 targets:
   upgradeAMIVersion:
