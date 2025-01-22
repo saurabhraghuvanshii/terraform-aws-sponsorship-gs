@@ -28,13 +28,12 @@ sources:
     spec:
       command: |
         set -e
-        aws ssm get-parameters-by-path \
+        release_version=$(aws ssm get-parameters-by-path \
           --path "/aws/service/eks/optimized-ami/1.29/" \
           --recursive \
           --query "Parameters[?contains(Name, 'amazon-linux-2023/arm64/standard/recommended')].Value" \
           --region us-east-2 \
-          --output json > text_output.json
-        output=$(jq -r '.[0] | fromjson | .release_version' < text_output.json)
+          --output json | jq -r '.[0] | fromjson | .release_version')
       environments:
           - name: PATH
           - name: AWS_ACCESS_KEY_ID
