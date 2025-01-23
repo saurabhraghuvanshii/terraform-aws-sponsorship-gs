@@ -553,12 +553,12 @@ resource "aws_vpc_security_group_egress_rule" "allow_cifs_out_private_subnets" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_jnlp_in_private_subnets" {
-  for_each = toset(module.vpc.private_subnets_cidr_blocks)
+  count = length(module.vpc.nat_public_ips)
 
-  description       = "Allow inbound JNLP Jenkins Agent protocol from private subnet ${each.key}"
+  description       = "Allow inbound JNLP Jenkins Agent protocol from agents outbound IP ${module.vpc.nat_public_ips[count.index]}"
   security_group_id = aws_security_group.ci_jenkins_io_controller.id
 
-  cidr_ipv4   = each.key
+  cidr_ipv4   = "${module.vpc.nat_public_ips[count.index]}/32"
   from_port   = 50000
   ip_protocol = "tcp"
   to_port     = 50000
