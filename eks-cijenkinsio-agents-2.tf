@@ -141,8 +141,8 @@ module "cijenkinsio_agents_2" {
       from_port        = 50000
       to_port          = 50000
       type             = "egress"
-      cidr_blocks      = ["0.0.0.0/0"]
-      ipv6_cidr_blocks = ["::/0"]
+      cidr_blocks      = ["${aws_eip.ci_jenkins_io.public_ip}/32"]
+      ipv6_cidr_blocks = formatlist("%s/32", aws_instance.ci_jenkins_io.ipv6_addresses)
     },
     egress_http = {
       description      = "Allow egress to plain HTTP"
