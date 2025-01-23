@@ -160,3 +160,19 @@ resource "aws_route53_record" "aaaa_aws_ci_jenkins_io" {
   ttl     = 60
   records = aws_instance.ci_jenkins_io.ipv6_addresses
 }
+
+resource "aws_route53_record" "a_assets_aws_ci_jenkins_io" {
+  zone_id = aws_route53_zone.aws_ci_jenkins_io.zone_id
+  name    = "assets.${local.ci_jenkins_io["controller_vm_fqdn"]}"
+  type    = "A"
+  ttl     = 60
+  records = [aws_eip.ci_jenkins_io.public_ip]
+}
+
+resource "aws_route53_record" "aaaa_assets_aws_ci_jenkins_io" {
+  zone_id = aws_route53_zone.aws_ci_jenkins_io.zone_id
+  name    = "assets.${local.ci_jenkins_io["controller_vm_fqdn"]}"
+  type    = "AAAA"
+  ttl     = 60
+  records = aws_instance.ci_jenkins_io.ipv6_addresses
+}
