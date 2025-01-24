@@ -440,8 +440,19 @@ resource "kubernetes_manifest" "cijenkinsio_agents_2_karpenter_nodeclasses" {
     }
 
     spec = {
-      role = module.cijenkinsio_agents_2_karpenter.node_iam_role_name
-      # "KarpenterNodeRole-cijenkinsio-agents-2" # TODO: templatize from karpenter module resources (node role name)
+      blockDeviceMappings = [
+        {
+          deviceName = "/dev/xvda"
+          ebs = {
+            volumeSize = "300Gi"
+            volumeType = "gp3"
+            iops       = 3000
+            encrypted  = true
+          }
+        }
+      ]
+
+      role                = module.cijenkinsio_agents_2_karpenter.node_iam_role_name
       subnetSelectorTerms = [for subnet_id in slice(module.vpc.private_subnets, 1, 3) : { id = subnet_id }]
       securityGroupSelectorTerms = [
         {
