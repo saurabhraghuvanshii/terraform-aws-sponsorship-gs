@@ -411,11 +411,11 @@ resource "kubernetes_manifest" "cijenkinsio_agents_2_karpenter_node_pools" {
         }
       }
       limits = {
-        cpu = 1600 # 8 vCPUS x 200 agents
+        cpu = 2400 # 8 vCPUS x 300 agents
       }
       disruption = {
-        consolidationPolicy = "WhenEmptyOrUnderutilized"
-        consolidateAfter    = "1m" # Linux Billing cycle on EC2
+        consolidationPolicy = "WhenEmpty" # Only consolidate empty nodes (to avoid restarting builds)
+        consolidateAfter    = "1m"        # Linux Billing cycle on EC2
       }
     }
   }
