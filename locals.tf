@@ -94,7 +94,7 @@ locals {
         ],
       },
     ]
-    subnets = ["eks-1", "eks-2"]
+    subnets = ["eks-1", "eks-2", "eks-3"]
   }
 
   toleration_taint_effects = {
@@ -159,19 +159,26 @@ locals {
     {
       name = "vm-agents-1",
       az   = format("${local.region}%s", "b"),
-      # First /23 of the second subset of the VPC (split in 2)
+      # A /23 (the '6' integer argument) on the second subset of the VPC (split in 2)
       cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[1], 6, 0)
     },
     {
       name = "eks-1",
       az   = format("${local.region}%s", "a"),
-      # Second /23 of the second subset of the VPC (split in 2)
+      # A /23 (the '6' integer argument) on the second subset of the VPC (split in 2)
       cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[1], 6, 1)
     },
-    { name = "eks-2",
+    {
+      name = "eks-2",
       az   = format("${local.region}%s", "c"),
-      # Third /23 of the second subset of the VPC (split in 2)
-      cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[1], 6, 2)
+      # A /21 (the '4' integer argument) on the second subset of the VPC (split in 2)
+      cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[1], 4, 2)
+    },
+    {
+      name = "eks-3",
+      az   = format("${local.region}%s", "a"),
+      # A /21 (the '4' integer argument) on the second subset of the VPC (split in 2)
+      cidr = cidrsubnet(cidrsubnets(local.vpc_cidr, 1, 1)[1], 4, 3)
     }
   ]
 }
