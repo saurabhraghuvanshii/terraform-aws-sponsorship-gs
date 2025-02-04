@@ -37,7 +37,7 @@ locals {
     },
     artifact_caching_proxy = {
       subnet_ids = [for idx, data in { for subnet_index, subnet_data in module.vpc.private_subnet_objects : subnet_data.availability_zone => subnet_data.id... } : element(data, 0)],
-      ips        = [for idx, data in { for subnet_index, subnet_data in module.vpc.private_subnet_objects : subnet_data.availability_zone => subnet_data.cidr_block... } : element(data, 0)],
+      ips        = [for idx, data in { for subnet_index, subnet_data in module.vpc.private_subnet_objects : subnet_data.availability_zone => subnet_data.cidr_block... } : cidrhost(element(data, 0), "-8")],
     }
     kubernetes_groups = ["ci-jenkins-io"],
     system_node_pool = {
