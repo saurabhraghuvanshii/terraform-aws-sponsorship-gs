@@ -21,7 +21,7 @@ module "vpc" {
   manage_default_route_table    = false
   manage_default_security_group = false
 
-  azs = [for subnet_name, subnet_data in local.vpc_private_subnets : subnet_data.az]
+  azs = [for subnet_index, subnet_data in local.vpc_private_subnets : subnet_data.az]
 
   private_subnets      = [for subnet in local.vpc_private_subnets : subnet.cidr]
   private_subnet_names = [for subnet in local.vpc_private_subnets : subnet.name]
