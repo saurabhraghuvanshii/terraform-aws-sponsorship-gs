@@ -20,3 +20,17 @@ variable "terratest" {
   description = "value"
   default     = false
 }
+
+## Secrets passed through the pipeline
+variable "ecr_dockerhub_username" {
+  description = "Docker Hub Username used by ECR Pull Through Cache"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+variable "ecr_dockerhub_token" {
+  description = "Docker Hub Token used by ECR Pull Through Cache"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
