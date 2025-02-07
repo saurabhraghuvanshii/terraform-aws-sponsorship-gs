@@ -1,5 +1,5 @@
 module "secrets_manager" {
-  source  = "terraform-aws-modules/secrets-manager/aws"
+  source = "terraform-aws-modules/secrets-manager/aws"
   ## TODO: track with updatecli
   version = "1.3.1"
 
@@ -12,7 +12,7 @@ module "secrets_manager" {
 }
 
 module "ecr" {
-  source  = "terraform-aws-modules/ecr/aws"
+  source = "terraform-aws-modules/ecr/aws"
   ## TODO: track with updatecli
   version = "2.3.1"
 
