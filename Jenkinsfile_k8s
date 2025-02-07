@@ -13,6 +13,11 @@ terraform(
     string(variable: 'AWS_ACCESS_KEY_ID', credentialsId: 'production-terraform-aws-sponsorship-access-key'),
     string(variable: 'AWS_SECRET_ACCESS_KEY', credentialsId:'production-terraform-aws-sponsorship-secret-key'),
     file(variable: 'BACKEND_CONFIG_FILE', credentialsId: 'production-terraform-aws-sponsorship-backend-config'),
+    usernamePassword(
+      credentialsId: 'infracijenkinsio-dockerhub-pull',
+      usernameVariable: 'TF_VAR_ecr_dockerhub_username',
+      passwordVariable: 'TF_VAR_ecr_dockerhub_token'
+    )
   ],
   publishReports: ['jenkins-infra-data-reports/aws-sponsorship.json'],
 )

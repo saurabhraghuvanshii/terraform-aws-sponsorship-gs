@@ -32,5 +32,10 @@ terraform {
     helm = {
       source = "hashicorp/helm"
     }
+    # Required by the secrets-manager module
+    ## TODO: track with updatecli
+    random = {
+      source = "hashicorp/random"
+    }
   }
 }
