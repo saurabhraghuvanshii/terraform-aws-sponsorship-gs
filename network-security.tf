@@ -326,6 +326,17 @@ resource "aws_vpc_security_group_egress_rule" "allow_acp_from_cijio_agents" {
   to_port           = 8080
 }
 
+resource "aws_vpc_security_group_egress_rule" "allow_dockerregistry_from_cijio_agents" {
+  for_each = toset(local.cijenkinsio_agents_2.docker_registry_mirror.ips)
+
+  description       = "Allow Docker Internal Registry (5000) from ci.jenkins.io VM agents"
+  security_group_id = aws_security_group.ephemeral_vm_agents.id
+  cidr_ipv4         = "${each.value}/32"
+  from_port         = 5000
+  ip_protocol       = "tcp"
+  to_port           = 5000
+}
+
 resource "aws_security_group" "restricted_in_ssh" {
   name        = "restricted-in-ssh"
   description = "Allow inbound SSH only from trusted sources (admins or VPN)"
