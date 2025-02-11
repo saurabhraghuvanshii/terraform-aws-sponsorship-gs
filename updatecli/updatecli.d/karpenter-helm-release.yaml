@@ -41,6 +41,7 @@ targets:
     spec:
       file: eks-cijenkinsio-agents-2.tf
       path: resource.helm_release.cijenkinsio_agents_2_karpenter.version
+    scmid: default
 
 actions:
   default:
