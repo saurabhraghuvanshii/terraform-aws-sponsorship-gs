@@ -272,10 +272,10 @@ resource "kubernetes_storage_class" "cijenkinsio_agents_2_ebs_csi_premium_retain
 }
 ## Install AWS Load Balancer Controller
 resource "helm_release" "cijenkinsio_agents_2_awslb" {
-  provider   = helm.cijenkinsio_agents_2
-  name       = "aws-load-balancer-controller"
-  repository = "https://aws.github.io/eks-charts"
-  chart      = "aws-load-balancer-controller"
+  provider         = helm.cijenkinsio_agents_2
+  name             = "aws-load-balancer-controller"
+  repository       = "https://aws.github.io/eks-charts"
+  chart            = "aws-load-balancer-controller"
   version          = "1.11.0"
   create_namespace = true
   namespace        = local.cijenkinsio_agents_2["awslb"]["namespace"]
@@ -316,7 +316,7 @@ resource "helm_release" "cijenkinsio_agents_2_karpenter" {
   create_namespace = true
   repository       = "oci://public.ecr.aws/karpenter"
   chart            = "karpenter"
-  version          = "1.1.1"
+  version          = "1.2.1"
   wait             = false
 
   values = [yamlencode({
