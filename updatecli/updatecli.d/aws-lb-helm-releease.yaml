@@ -16,16 +16,13 @@ scms:
 sources:
   lastChartVersion:
     name: aws-load-balancer-controller Helm Chart Latest Version
-    kind: githubrelease
+    kind: helmchart
     spec:
-      owner: kubernetes-sigs
-      repository: aws-load-balancer-controller
-      token: "{{ requiredEnv .github.token }}"
-      username: "{{ .github.username }}"
-      versionFilter:
-        kind: latest
-    transformers:
-      - trimprefix: "v"
+      url: https://aws.github.io/eks-charts
+      name: aws-load-balancer-controller
+      versionfilter:
+        kind: semver
+        strict: true
 
 targets:
   updateChartVersion:
