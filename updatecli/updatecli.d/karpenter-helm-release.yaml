@@ -14,18 +14,24 @@ scms:
       branch: "{{ .github.branch }}"
 
 sources:
+  logoutPublicECR:
+    name: Logout from public ECR registry via Helm CLI
+    kind: shell
+    spec:
+      command: |
+        docker logout public.ecr.aws
+
   lastChartVersion:
     name: Karpenter AWS Provider Helm Chart Latest Version
-    kind: githubrelease
+    dependson:
+      - logoutPublicECR
+    kind: helmchart
     spec:
-      owner: aws
-      repository: karpenter-provider-aws
-      token: "{{ requiredEnv .github.token }}"
-      username: "{{ .github.username }}"
-      versionFilter:
-        kind: latest
-    transformers:
-      - trimprefix: "v"
+      url: oci://public.ecr.aws/karpenter
+      name: karpenter
+      versionfilter:
+        kind: semver
+        strict: true
 
 targets:
   updateChartVersion:
@@ -34,8 +40,7 @@ targets:
     sourceid: lastChartVersion
     spec:
       file: eks-cijenkinsio-agents-2.tf
-      path: resource.helm_release.karpenter.version
-    scmid: default
+      path: resource.helm_release.cijenkinsio_agents_2_karpenter.version
 
 actions:
   default:
