@@ -105,7 +105,7 @@ locals {
         spot         = true
         nodeLabels = {
           "jenkins" = "ci.jenkins.io",
-          "role"    = "jenkins-agents-bom",
+          "role"    = "jenkins-agents",
         }
         taints = [
           {
