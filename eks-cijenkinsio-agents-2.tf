@@ -321,10 +321,6 @@ module "cijenkinsio_agents_2_admin_sa" {
   cluster_hostname           = module.cijenkinsio_agents_2.cluster_endpoint
   cluster_ca_certificate_b64 = module.cijenkinsio_agents_2.cluster_certificate_authority_data
 }
-moved {
-  from = helm_release.karpenter
-  to   = helm_release.cijenkinsio_agents_2_karpenter
-}
 resource "helm_release" "cijenkinsio_agents_2_karpenter" {
   provider         = helm.cijenkinsio_agents_2
   name             = "karpenter"
