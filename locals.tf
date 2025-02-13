@@ -98,6 +98,30 @@ locals {
           },
         ],
       },
+      {
+        name         = "agents-windows-amd64"
+        os           = "windows"
+        architecture = "amd64"
+        spot         = true
+        nodeLabels = {
+          "jenkins" = "ci.jenkins.io",
+          "role"    = "jenkins-agents",
+        }
+        taints = [
+          {
+            "effect" : "NoSchedule",
+            "key" : "${local.ci_jenkins_io["service_fqdn"]}/agents",
+            "operator" : "Equal",
+            "value" : "true"
+          },
+          {
+            "effect" : "NoSchedule",
+            "key" : "${local.ci_jenkins_io["service_fqdn"]}/windows",
+            "operator" : "Equal",
+            "value" : "true"
+          },
+        ],
+      },
     ]
     subnets = ["eks-1", "eks-2", "eks-3"]
   }
