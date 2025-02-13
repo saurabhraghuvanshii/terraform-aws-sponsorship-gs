@@ -109,7 +109,7 @@ resource "aws_instance" "ci_jenkins_io" {
     delete_on_termination = false # Even if we terminate the machine
     encrypted             = true
     volume_type           = "gp3"
-    volume_size           = 300
+    volume_size           = 500
 
     tags = local.common_tags
 
