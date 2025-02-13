@@ -41,7 +41,7 @@ locals {
     }
     docker_registry_mirror = {
       subnet_ids = [for idx, data in { for subnet_index, subnet_data in module.vpc.private_subnet_objects : subnet_data.availability_zone => subnet_data.id... } : element(data, 0)],
-      ips        = [for idx, data in { for subnet_index, subnet_data in module.vpc.private_subnet_objects : subnet_data.availability_zone => subnet_data.cidr_block... } : cidrhost(element(data, 0), "-10")],
+      ips        = [for idx, data in { for subnet_index, subnet_data in module.vpc.private_subnet_objects : subnet_data.availability_zone => subnet_data.cidr_block... } : cidrhost(element(data, 0), "-9")],
     }
     kubernetes_groups = ["ci-jenkins-io"],
     system_node_pool = {
@@ -117,11 +117,14 @@ locals {
   outbound_ips_infracijenkinsioagents1_jenkins_io = "20.122.14.108 20.186.70.154"
   # Tracked by 'updatecli' from the following source: https://reports.jenkins.io/jenkins-infra-data-reports/azure-net.json
   outbound_ips_private_vpn_jenkins_io = "172.176.126.194"
+
   outbound_ips = {
     # Terraform management and Docker-packaging build
     "infracijenkinsioagents1.jenkins.io" = split(" ", local.outbound_ips_infracijenkinsioagents1_jenkins_io)
     # Connections routed through the VPN
-    "private.vpn.jenkins.io" = split(" ", local.outbound_ips_private_vpn_jenkins_io)
+    "private.vpn.jenkins.io" = split(" ", local.outbound_ips_private_vpn_jenkins_io),
+    # Migration from Azure. TODO: remove after migration
+    "azure.ci.jenkins.io" = ["172.200.120.16", "20.230.90.10", "172.177.87.156", "68.154.8.163", "172.200.126.194"]
   }
   external_ips = {
     # Jenkins Puppet Master

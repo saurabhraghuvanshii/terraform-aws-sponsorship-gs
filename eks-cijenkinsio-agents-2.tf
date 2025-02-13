@@ -143,6 +143,22 @@ module "cijenkinsio_agents_2" {
       type        = "egress"
       cidr_blocks = ["${aws_eip.ci_jenkins_io.public_ip}/32"]
     },
+    ingress_hub_mirror = {
+      description = "Allow ingress to Registry Pods"
+      protocol    = "TCP"
+      from_port   = 5000
+      to_port     = 5000
+      type        = "ingress"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+    ingress_hub_mirror_2 = {
+      description = "Allow ingress to Registry Pods with alternate port"
+      protocol    = "TCP"
+      from_port   = 8080
+      to_port     = 8080
+      type        = "ingress"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
   }
 
   # Allow ingress from ci.jenkins.io VM
