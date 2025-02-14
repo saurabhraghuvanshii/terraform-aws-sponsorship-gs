@@ -422,7 +422,7 @@ resource "kubernetes_manifest" "cijenkinsio_agents_2_karpenter_node_pools" {
         }
       }
       limits = {
-        cpu = 2400 # 8 vCPUS x 300 agents
+        cpu = 3200 # 8 vCPUS x 400 agents
       }
       disruption = {
         consolidationPolicy = "WhenEmpty" # Only consolidate empty nodes (to avoid restarting builds)
