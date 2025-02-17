@@ -243,11 +243,29 @@ module "cijenkinsio_agents_2_karpenter" {
   irsa_oidc_provider_arn          = module.cijenkinsio_agents_2.oidc_provider_arn
 
   # Used to attach additional IAM policies to the Karpenter node IAM role
-  # node_iam_role_additional_policies = {
-  #   AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-  # }
+  node_iam_role_additional_policies = {
+    EksWindows = aws_iam_policy.eks_windows.arn
+  }
 
   tags = local.common_tags
+}
+data "aws_iam_policy_document" "eks_windows" {
+  statement {
+    sid    = "EksWindows"
+    effect = "Allow"
+
+    actions = [
+      "eks:kube-proxy-windows",
+    ]
+
+    #tfsec:ignore:AWS099
+    resources = ["*"]
+  }
+}
+resource "aws_iam_policy" "eks_windows" {
+  name   = "eks-windows"
+  path   = "/"
+  policy = data.aws_iam_policy_document.eks_windows.json
 }
 # https://karpenter.sh/docs/troubleshooting/#missing-service-linked-role
 resource "aws_iam_service_linked_role" "ec2_spot" {
