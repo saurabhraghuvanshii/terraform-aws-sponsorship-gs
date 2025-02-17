@@ -85,7 +85,7 @@ resource "aws_key_pair" "ci_jenkins_io" {
 
 resource "aws_instance" "ci_jenkins_io" {
   ami           = "ami-0700ac71a4832f3b3" # Ubuntu 22.04 - arm64 - 2024-11-15 (no need to update it unless if recreating the VM)
-  instance_type = "c7g.2xlarge"            # 8 vcpus Graviton 16Go https://aws.amazon.com/fr/ec2/instance-types/
+  instance_type = "c7g.2xlarge"           # 8 vcpus Graviton 16Go https://aws.amazon.com/fr/ec2/instance-types/
 
   iam_instance_profile = aws_iam_instance_profile.ci_jenkins_io.name
 
