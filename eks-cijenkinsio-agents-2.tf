@@ -87,6 +87,11 @@ module "cijenkinsio_agents_2" {
     vpc-cni = {
       # https://docs.aws.amazon.com/cli/latest/reference/eks/describe-addon-versions.html
       addon_version = local.cijenkinsio_agents_2_cluster_addons_vpcCni_addon_version
+      # Ensure vpc-cni changes are applied before any EC2 instances are created
+      before_compute = true
+      configuration_values = jsonencode({
+        enableWindowsIpam = "true"
+      })
     }
     ## https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/CHANGELOG.md
     aws-ebs-csi-driver = {
