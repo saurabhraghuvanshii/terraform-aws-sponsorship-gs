@@ -45,26 +45,27 @@ locals {
     }
     kubernetes_groups = ["ci-jenkins-io"],
     system_node_pool = {
-      name = "applications"
+      name = "applications",
       tolerations = [
         {
           "effect" : "NoSchedule",
           "key" : "${local.ci_jenkins_io["service_fqdn"]}/applications",
           "operator" : "Equal",
-          "value" : "true"
+          "value" : "true",
         },
       ],
     }
     karpenter_node_pools = [
       {
-        name         = "agents-linux-amd64"
-        os           = "linux"
-        architecture = "amd64"
-        spot         = true
+        name             = "agents-linux-amd64",
+        os               = "linux",
+        architecture     = "amd64",
+        consolidateAfter = "1m",
+        spot             = true,
         nodeLabels = {
           "jenkins" = "ci.jenkins.io",
           "role"    = "jenkins-agents",
-        }
+        },
         taints = [
           {
             "effect" : "NoSchedule",
@@ -75,50 +76,77 @@ locals {
         ],
       },
       {
-        name         = "agents-bom-linux-amd64"
-        os           = "linux"
-        architecture = "amd64"
-        spot         = true
+        name             = "agents-bom-linux-amd64",
+        os               = "linux",
+        architecture     = "amd64",
+        consolidateAfter = "1m",
+        spot             = true,
         nodeLabels = {
           "jenkins" = "ci.jenkins.io",
           "role"    = "jenkins-agents-bom",
-        }
+        },
         taints = [
           {
             "effect" : "NoSchedule",
             "key" : "${local.ci_jenkins_io["service_fqdn"]}/agents",
             "operator" : "Equal",
-            "value" : "true"
+            "value" : "true",
           },
           {
             "effect" : "NoSchedule",
             "key" : "${local.ci_jenkins_io["service_fqdn"]}/bom",
             "operator" : "Equal",
-            "value" : "true"
+            "value" : "true",
           },
         ],
       },
       {
-        name         = "agents-windows-amd64"
-        os           = "windows"
-        architecture = "amd64"
-        spot         = true
+        name             = "agents-windows-2022-amd64",
+        os               = "windows-2022",
+        architecture     = "amd64",
+        consolidateAfter = "30m",
+        spot             = true,
         nodeLabels = {
           "jenkins" = "ci.jenkins.io",
           "role"    = "jenkins-agents",
-        }
+        },
         taints = [
           {
             "effect" : "NoSchedule",
             "key" : "${local.ci_jenkins_io["service_fqdn"]}/agents",
             "operator" : "Equal",
-            "value" : "true"
+            "value" : "true",
           },
           {
             "effect" : "NoSchedule",
-            "key" : "${local.ci_jenkins_io["service_fqdn"]}/windows",
+            "key" : "${local.ci_jenkins_io["service_fqdn"]}/windows-2022",
             "operator" : "Equal",
-            "value" : "true"
+            "value" : "true",
+          },
+        ],
+      },
+      {
+        name             = "agents-windows-2019-amd64",
+        os               = "windows-2019",
+        architecture     = "amd64",
+        consolidateAfter = "30m",
+        spot             = true,
+        nodeLabels = {
+          "jenkins" = "ci.jenkins.io",
+          "role"    = "jenkins-agents",
+        },
+        taints = [
+          {
+            "effect" : "NoSchedule",
+            "key" : "${local.ci_jenkins_io["service_fqdn"]}/agents",
+            "operator" : "Equal",
+            "value" : "true",
+          },
+          {
+            "effect" : "NoSchedule",
+            "key" : "${local.ci_jenkins_io["service_fqdn"]}/windows-2019",
+            "operator" : "Equal",
+            "value" : "true",
           },
         ],
       },

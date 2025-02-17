@@ -407,7 +407,10 @@ resource "kubernetes_manifest" "cijenkinsio_agents_2_karpenter_node_pools" {
             {
               key      = "kubernetes.io/os"
               operator = "In"
-              values   = [each.value.os]
+              values = [
+                # Strip suffix for Windows node (which contains the OS version)
+                startswith(each.value.os, "windows") ? "windows" : each.value.os,
+              ]
             },
             {
               key      = "karpenter.sh/capacity-type"
@@ -449,7 +452,7 @@ resource "kubernetes_manifest" "cijenkinsio_agents_2_karpenter_node_pools" {
       }
       disruption = {
         consolidationPolicy = "WhenEmpty" # Only consolidate empty nodes (to avoid restarting builds)
-        consolidateAfter    = "1m"        # Linux Billing cycle on EC2
+        consolidateAfter    = lookup(each.value, "consolidateAfter", "1m")
       }
     }
   }
@@ -476,7 +479,8 @@ resource "kubernetes_manifest" "cijenkinsio_agents_2_karpenter_nodeclasses" {
     spec = {
       blockDeviceMappings = [
         {
-          deviceName = "/dev/xvda"
+          # Ref. https://karpenter.sh/docs/concepts/nodeclasses/#windows2019windows2022
+          deviceName = startswith(each.value.os, "windows") ? "/dev/sda1" : "/dev/xvda"
           ebs = {
             volumeSize = "300Gi"
             volumeType = "gp3"
@@ -498,9 +502,9 @@ resource "kubernetes_manifest" "cijenkinsio_agents_2_karpenter_nodeclasses" {
         {
           # Few notes about AMI aliases (ref. karpenter and AWS EKS docs.)
           # - WindowsXXXX only has the "latest" version available
-          # - Windows 2022 is our default OS choice for Windows containers nodes
           # - Amazon Linux 2023 is our default OS choice for Linux containers nodes
-          alias = each.value.os == "windows" ? "windows2022@latest" : "al2023@v20241213"
+          # TODO: track AL2023 version with updatecli
+          alias = startswith(each.value.os, "windows") ? "${replace(each.value.os, "-", "")}@latest" : "al2023@v20241213"
         }
       ]
     }
