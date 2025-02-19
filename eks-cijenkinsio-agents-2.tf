@@ -7,7 +7,7 @@ module "cijenkinsio_agents_2" {
 
   cluster_name = "cijenkinsio-agents-2"
   # Kubernetes version in format '<MINOR>.<MINOR>', as per https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html
-  cluster_version = "1.29"
+  cluster_version = "1.30"
   create_iam_role = true
 
   # 2 AZs are mandatory for EKS https://docs.aws.amazon.com/eks/latest/userguide/network-reqs.html#network-requirements-subnets
@@ -482,7 +482,7 @@ resource "kubernetes_manifest" "cijenkinsio_agents_2_karpenter_nodeclasses" {
           # - WindowsXXXX only has the "latest" version available
           # - Amazon Linux 2023 is our default OS choice for Linux containers nodes
           # TODO: track AL2023 version with updatecli
-          alias = startswith(each.value.os, "windows") ? "${replace(each.value.os, "-", "")}@latest" : "al2023@v20241213"
+          alias = startswith(each.value.os, "windows") ? "${replace(each.value.os, "-", "")}@latest" : "al2023@v20250212"
         }
       ]
     }
