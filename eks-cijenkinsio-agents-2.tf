@@ -482,7 +482,7 @@ resource "kubernetes_manifest" "cijenkinsio_agents_2_karpenter_nodeclasses" {
           # - WindowsXXXX only has the "latest" version available
           # - Amazon Linux 2023 is our default OS choice for Linux containers nodes
           # TODO: track AL2023 version with updatecli
-          alias = startswith(each.value.os, "windows") ? "${replace(each.value.os, "-", "")}@latest" : "al2023@v20241213"
+          alias = startswith(each.value.os, "windows") ? "${replace(each.value.os, "-", "")}@latest" : "al2023@v20250212"
         }
       ]
     }
