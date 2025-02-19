@@ -31,7 +31,7 @@ module "cijenkinsio_agents_2" {
       type          = "STANDARD"
 
       policy_associations = {
-        example = {
+        cluster_admin = {
           policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
           access_scope = {
             type       = "cluster"
@@ -44,7 +44,7 @@ module "cijenkinsio_agents_2" {
       principal_arn     = aws_iam_role.ci_jenkins_io.arn
       type              = "STANDARD"
       kubernetes_groups = local.cijenkinsio_agents_2.kubernetes_groups
-    }
+    },
   }
 
   create_kms_key = false
@@ -229,11 +229,13 @@ module "cijenkinsio_agents_2_awslb_irsa_role" {
 ################################################################################
 # Karpenter Resources
 # - https://aws-ia.github.io/terraform-aws-eks-blueprints/patterns/karpenter-mng/
-# - https://karpenter.sh/v0.32/getting-started/getting-started-with-karpenter/
+# - https://karpenter.sh/v1.2/getting-started/getting-started-with-karpenter/
 ################################################################################
 module "cijenkinsio_agents_2_karpenter" {
   source  = "terraform-aws-modules/eks/aws//modules/karpenter"
   version = "20.33.1"
+
+  access_entry_type = "EC2_WINDOWS"
 
   cluster_name          = module.cijenkinsio_agents_2.cluster_name
   enable_v1_permissions = true
@@ -247,36 +249,12 @@ module "cijenkinsio_agents_2_karpenter" {
   irsa_namespace_service_accounts = ["${local.cijenkinsio_agents_2["karpenter"]["namespace"]}:${local.cijenkinsio_agents_2["karpenter"]["serviceaccount"]}"]
   irsa_oidc_provider_arn          = module.cijenkinsio_agents_2.oidc_provider_arn
 
-  # Used to attach additional IAM policies to the Karpenter node IAM role
-  node_iam_role_additional_policies = {
-    EksWindows = aws_iam_policy.eks_windows.arn
-  }
-
   tags = local.common_tags
-}
-data "aws_iam_policy_document" "eks_windows" {
-  statement {
-    sid    = "EksWindows"
-    effect = "Allow"
-
-    actions = [
-      "eks:kube-proxy-windows",
-    ]
-
-    #tfsec:ignore:AWS099
-    resources = ["*"]
-  }
-}
-resource "aws_iam_policy" "eks_windows" {
-  name   = "eks-windows"
-  path   = "/"
-  policy = data.aws_iam_policy_document.eks_windows.json
 }
 # https://karpenter.sh/docs/troubleshooting/#missing-service-linked-role
 resource "aws_iam_service_linked_role" "ec2_spot" {
   aws_service_name = "spot.amazonaws.com"
 }
-
 ################################################################################
 # Kubernetes resources in the EKS cluster ci.jenkins.io agents-2
 # Note: provider is defined in providers.tf but requires the eks-token below
