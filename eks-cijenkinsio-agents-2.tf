@@ -135,6 +135,11 @@ module "cijenkinsio_agents_2" {
           effect = local.toleration_taint_effects[toleration_value.effect]
         }
       }
+
+      iam_role_additional_policies = {
+        AmazonEC2ContainerRegistryReadOnly = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+        additional                         = aws_iam_policy.ecrpullthroughcache.arn
+      }
     },
   }
 
@@ -249,8 +254,35 @@ module "cijenkinsio_agents_2_karpenter" {
   irsa_namespace_service_accounts = ["${local.cijenkinsio_agents_2["karpenter"]["namespace"]}:${local.cijenkinsio_agents_2["karpenter"]["serviceaccount"]}"]
   irsa_oidc_provider_arn          = module.cijenkinsio_agents_2.oidc_provider_arn
 
+  node_iam_role_additional_policies = {
+    AmazonEC2ContainerRegistryReadOnly = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+    additional                         = aws_iam_policy.ecrpullthroughcache.arn
+  }
+
   tags = local.common_tags
 }
+
+resource "aws_iam_policy" "ecrpullthroughcache" {
+  name = "ECRPullThroughCache"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "ecr:CreateRepository",
+          "ecr:BatchImportUpstreamImage",
+          "ecr:TagResource"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+    ]
+  })
+
+  tags = local.common_tags
+}
+
 # https://karpenter.sh/docs/troubleshooting/#missing-service-linked-role
 resource "aws_iam_service_linked_role" "ec2_spot" {
   aws_service_name = "spot.amazonaws.com"
