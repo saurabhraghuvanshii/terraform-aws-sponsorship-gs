@@ -1,0 +1,39 @@
+scms:
+  default:
+    kind: github
+    spec:
+      user: "saurabh"
+      email: "saurabhsraghuvanshi@gmail.com"
+      owner: "saurabhraghuvanshii"
+      repository: "terraform-aws-sponsorship-gs"
+      token: "{{ env `GITHUB_TOKEN` }}"
+      username: "saurabhraghuvanshii"
+      branch: "main"
+
+sources:
+  latestECRVersion:
+    name: "Get latest version of terraform-aws-modules/ecr/aws"
+    kind: "terraform/registry"
+    spec:
+      module: "terraform-aws-modules/ecr/aws"
+      constraint: ">2.3.1"
+
+targets:
+  updateECRModule:
+    name: "Update ECR module version in ecr.tf"
+    kind: "file"
+    sourceid: latestECRVersion
+    spec:
+      file: "ecr.tf"
+      matchPattern: "version = \"[0-9.]+\""
+      replacePattern: "version = \"{{ .Source }}\""
+
+conditions:
+  checkLatestVersion:
+    name: "Check if version is already the latest"
+    kind: "file"
+    sourceid: latestECRVersion
+    spec:
+      file: "ecr.tf"
+      matchPattern: "version = \"{{ .Source }}\""
+      
