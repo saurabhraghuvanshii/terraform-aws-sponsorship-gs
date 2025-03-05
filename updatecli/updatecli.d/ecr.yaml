@@ -1,3 +1,5 @@
+name: Bump version of the Terraform "ecr" module in terraform-aws-sponsorship/ecr.tf
+
 scms:
   default:
     kind: github
@@ -12,30 +14,30 @@ scms:
 
 sources:
   getLatestVersion:
-    name: "Get latest version of terraform-aws-modules/secrets-manager/aws"
+    name: "Get latest version of terraform-aws-modules/ecr/aws"
     kind: "terraform/registry"
     spec:
       type: module
       namespace: terraform-aws-modules
-      name: secrets-manager
+      name: ecr
       targetsystem: aws
 
 targets:
   updateECRModule:
-    name: Update Secrets-Manager module version in ecr.tf
+    name: Update the Terraform "ecr" module version in terraform-aws-sponsorship/ecr.tf
     kind: hcl
     sourceid: getLatestVersion
     spec:
       file: ecr.tf
-      path: module.secrets_manager.version
+      path: module.ecr.version
     scmid: default
 
 actions:
   upgradeAwsSecretsManagerModuleVersion:
     kind: github/pullrequest
     scmid: default
-    title: Bump version of the AWS Terraform module "secrets_manager" to {{ source "getLatestVersion" }}
+    title: Bump version of the AWS Terraform module "ecr" to {{ source "getLatestVersion" }}
     spec:
       labels:
         - dependencies
-        - terraform-aws-secrets-manager-module
+        - terraform-aws-ecr-module
