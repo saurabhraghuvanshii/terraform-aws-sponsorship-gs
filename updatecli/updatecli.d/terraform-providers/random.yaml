@@ -4,14 +4,13 @@ scms:
   default:
     kind: github
     spec:
-      user: "saurabh"
-      email: "saurabhsraghuvanshi@gmail.com"
-      owner: "saurabhraghuvanshii"
-      repository: "terraform-aws-sponsorship-gs"
-      token: "{{ env `GITHUB_TOKEN` }}"
-      username: "saurabhraghuvanshii"
-      branch: "main"
-
+      user: "{{ .github.user }}"
+      email: "{{ .github.email }}"
+      owner: "{{ .github.owner }}"
+      repository: "{{ .github.repository }}"
+      token: "{{ requiredEnv .github.token }}"
+      username: "{{ .github.username }}"
+      branch: "{{ .github.branch }}"
 
 sources:
   lastVersion:
