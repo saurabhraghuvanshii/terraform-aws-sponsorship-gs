@@ -85,7 +85,7 @@ resource "aws_key_pair" "ci_jenkins_io" {
 
 resource "aws_instance" "ci_jenkins_io" {
   ami           = "ami-0700ac71a4832f3b3" # Ubuntu 22.04 - arm64 - 2024-11-15 (no need to update it unless if recreating the VM)
-  instance_type = "c7g.2xlarge"           # 8 vcpus Graviton 16Go https://aws.amazon.com/fr/ec2/instance-types/
+  instance_type = "m7g.2xlarge"           # 8 vcpus Graviton 32Go https://aws.amazon.com/fr/ec2/instance-types/
 
   iam_instance_profile = aws_iam_instance_profile.ci_jenkins_io.name
 
@@ -110,6 +110,8 @@ resource "aws_instance" "ci_jenkins_io" {
     encrypted             = true
     volume_type           = "gp3"
     volume_size           = 500
+    throughput            = 200  # Mb/s. Default (and free) for gp3 is 125.
+    iops                  = 6000 # Default (and free) for gp3 is 3000.
 
     tags = local.common_tags
 
