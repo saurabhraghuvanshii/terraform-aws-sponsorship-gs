@@ -11,28 +11,31 @@ scms:
       branch: "{{ .github.branch }}"
 
 sources:
-  latestECRVersion:
+  getLatestVersion:
     name: "Get latest version of terraform-aws-modules/secrets-manager/aws"
     kind: "terraform/registry"
     spec:
-      module: "terraform-aws-modules/secrets-manager/aws"
-      constraint: ">1.3.1"
+      type: module
+      namespace: terraform-aws-modules
+      name: secrets-manager
+      targetsystem: aws
 
 targets:
   updateECRModule:
-    name: "Update Secrets-Manager module version in ecr.tf"
-    kind: "file"
-    sourceid: latestECRVersion
+    name: Update Secrets-Manager module version in ecr.tf
+    kind: hcl
+    sourceid: getLatestVersion
     spec:
-      file: "ecr.tf"
-      matchPattern: "version = \"[0-9.]+\""
-      replacePattern: "version = \"{{ .Source }}\""
+      file: ecr.tf
+      path: module.secrets_manager.version
+    scmid: default
 
-conditions:
-  checkLatestVersion:
-    name: "Check if version is already the latest"
-    kind: "file"
-    sourceid: latestECRVersion
+actions:
+  upgradeAwsSecretsManagerModuleVersion:
+    kind: github/pullrequest
+    scmid: default
+    title: Bump version of the AWS Terraform module "secrets_manager" to {{ source "getLatestVersion" }}
     spec:
-      file: "ecr.tf"
-      matchPattern: "version = \"{{ .Source }}\""
+      labels:
+        - dependencies
+        - terraform-aws-secrets-manager-module
