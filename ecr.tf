@@ -1,14 +1,5 @@
-module "secrets_manager" {
-  source = "terraform-aws-modules/secrets-manager/aws"
-  ## TODO: track with updatecli
-  version = "1.3.1"
-
-  name = "ecr-pullthroughcache/docker"
-  secret_string = jsonencode({
-    username    = var.ecr_dockerhub_username,
-    accessToken = var.ecr_dockerhub_token,
-  })
-  recovery_window_in_days = 0 # Set to 0 for testing purposes, this will immediately delete the secret. This action is irreversible. https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_DeleteSecret.html
+data "aws_secretsmanager_secret" "dockerhub_readonly" {
+  name = "ecr-pullthroughcache/dockerhub"
 }
 
 module "ecr" {
@@ -34,7 +25,7 @@ module "ecr" {
     dockerhub = {
       ecr_repository_prefix = "docker-hub"
       upstream_registry_url = "registry-1.docker.io"
-      credential_arn        = module.secrets_manager.secret_arn
+      credential_arn        = data.aws_secretsmanager_secret.dockerhub_readonly.arn
     }
   }
 
